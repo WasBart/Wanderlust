@@ -5,6 +5,9 @@
 #include <sstream>
 #include "shader.h"
 #include "Cube.h"
+#include <Windows.h>
+
+
 
 
 
@@ -32,9 +35,11 @@ int main(){
 	const int width = 800;
 	const int height = 600;
 
-	auto window = glfwCreateWindow(width, height, "CGUE", nullptr, nullptr);
-
+#if _DEBUG
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+#endif
+
+	auto window = glfwCreateWindow(width, height, "CGUE", nullptr, nullptr);
 
 	if (!window){
 		std::cerr << ("ERROR : Could not create window!") << std::endl;
@@ -53,8 +58,30 @@ int main(){
 		exit(EXIT_FAILURE);
 	}
 
-	/*glDebugMessageCallback(DebugCallback,nullptr);
-	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);*/
+
+#if _DEBUG
+	// Query the OpenGL function to register your callback function.
+	PFNGLDEBUGMESSAGECALLBACKPROC _glDebugMessageCallback = (PFNGLDEBUGMESSAGECALLBACKPROC)wglGetProcAddress("glDebugMessageCallback");
+	PFNGLDEBUGMESSAGECALLBACKARBPROC _glDebugMessageCallbackARB = (PFNGLDEBUGMESSAGECALLBACKARBPROC)wglGetProcAddress("glDebugMessageCallbackARB");
+	PFNGLDEBUGMESSAGECALLBACKAMDPROC _glDebugMessageCallbackAMD = (PFNGLDEBUGMESSAGECALLBACKAMDPROC)wglGetProcAddress("glDebugMessageCallbackAMD");
+
+	// Register your callback function.
+	if (_glDebugMessageCallback != NULL) {
+		_glDebugMessageCallback(DebugCallback, NULL);
+	}
+	else if (_glDebugMessageCallbackARB != NULL) {
+		_glDebugMessageCallbackARB(DebugCallback, NULL);
+	}
+	
+
+	// Enable synchronous callback. This ensures that your callback function is called
+	// right after an error has occurred. This capability is not defined in the AMD
+	// version.
+	if ((_glDebugMessageCallback != NULL) || (_glDebugMessageCallbackARB != NULL)) {
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+	}
+#endif
+
 
 	init(window);
 
@@ -76,6 +103,10 @@ int main(){
 
 		if (glfwGetKey(window, GLFW_KEY_ESCAPE)){
 			glfwSetWindowShouldClose(window, true);
+		}
+
+		if (glfwGetKey(window, GLFW_KEY_F1)){
+			glTranslatef(0.0f, 0.0f, 0.0f);
 		}
 	}
 
@@ -110,6 +141,30 @@ void update(){
 
 
 static void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const GLvoid* userParam) {
+	switch (id) {
+	case 131185: {
+		// Warning: Video Memory as Source
+	
+
+		return;
+	}
+	default: {
+		break;
+	}
+	}
+
+	switch (id) {
+	case 131218: {
+		// Program/shader state performance warning:
+		// Fragment Shader is going to be recompiled because the shader key based on GL state mismatches.
+
+		return;
+	}
+	default: {
+		break;
+	}
+	}
+	
 	std::string error = FormatDebugOutput(source, type, id, severity, message);
 	std::cout << error << std::endl;
 }
