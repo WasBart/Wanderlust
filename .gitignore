@@ -183,6 +183,9 @@ UpgradeLog*.htm
 # Microsoft Fakes
 FakesAssemblies/
 
+build-Debug
+build-Release
+Debug
 # LightSwitch generated files
 GeneratedArtifacts/
 _Pvt_Extensions/
