@@ -20,7 +20,7 @@ namespace cgue
 			Cube(glm::mat4& matrix, Shader* _shader);
 			virtual ~Cube();
 
-			virtual void update();
+			virtual void update(float time_delta);
 			virtual void draw();
 
 		private:

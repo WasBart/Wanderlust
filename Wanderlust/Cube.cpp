@@ -43,9 +43,11 @@ Cube::~Cube()
 	glDeleteVertexArrays(1, &vao);
 }
 
-void Cube::update(){
+void Cube::update(float time_delta){
 
+	modelMatrix = glm::rotate(modelMatrix, 90.0f*time_delta, glm::vec3(0, 1, 0));
 }
+
 void Cube::draw(){
 	glBindVertexArray(vao);
 	glDrawElements(GL_TRIANGLES, CUBE_INDEX_COUNT, GL_UNSIGNED_INT, 0);

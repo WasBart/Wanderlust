@@ -2,7 +2,11 @@
 #include <memory>
 #include <glew\glew.h>
 #include <GLFW\glfw3.h>
+
 #include <glm\glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include <sstream>
 #include "shader.h"
 #include "Cube.h"
@@ -17,11 +21,11 @@ static void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum
 void init(GLFWwindow* window);
 void cleanup();
 void draw();
-void update();
+void update(float time_delta);
 
 std::unique_ptr<Shader> shader;
 std::unique_ptr<Cube> cube;
-bool drawMode = false;
+
 
 int main(){
 
@@ -85,8 +89,13 @@ int main(){
 #endif
 
 
+
 	init(window);
-	glViewport(0, 0, 800, 600);
+
+	glClearColor(0.35f, 0.36f, 0.43f, 0.3f);
+	glViewport(0, 0, width, height);
+	
+
 	auto time = glfwGetTime();
 	while (!glfwWindowShouldClose(window)){
 
@@ -97,7 +106,10 @@ int main(){
 		std::cout << "frametime:" << time_delta * 1000 << "ms"
 			<< " =~" << 1.0 / time_delta << "fps" << std::endl;
 
-		update();
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		update(time_delta);
+		
 		draw();
 
 		glfwSwapBuffers(window);
@@ -134,11 +146,15 @@ void cleanup(){
 void draw(){
 	
 	shader->useShader();
+
+	auto& model = cube->modelMatrix;
+	auto model_location = glGetUniformLocation(shader->programHandle, "model");
+	glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model));
 	cube->draw();
 
 }
-void update(){
-	cube->update();
+void update(float time_delta){
+	cube->update(time_delta);
 }
 
 

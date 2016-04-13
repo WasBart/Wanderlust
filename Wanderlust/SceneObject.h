@@ -8,11 +8,11 @@ namespace cgue
 		class SceneObject
 		{
 		public:
-			SceneObject(glm::mat4&modelMatrix);
+			SceneObject(glm::mat4& modelMatrix);
 
 			virtual ~SceneObject();
 
-			virtual void update() = 0;
+			virtual void update(float time_delta) = 0;
 			virtual void draw() = 0;
 
 			glm::mat4 modelMatrix;

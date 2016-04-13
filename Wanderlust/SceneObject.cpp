@@ -2,8 +2,8 @@
 
 using namespace cgue::scene; 
 
-SceneObject::SceneObject(glm::mat4&modeMatrix)
-	:modelMatrix(modelMatrix)
+SceneObject::SceneObject(glm::mat4&_modelMatrix)
+	:modelMatrix(_modelMatrix)
 {
 
 }
