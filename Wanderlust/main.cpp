@@ -11,6 +11,8 @@
 #include "shader.h"
 #include "Cube.h"
 #include <Windows.h>
+#include "Model.h"
+#include "Mesh.h"
 
 
 using namespace cgue;
@@ -24,7 +26,8 @@ void draw();
 void update(float time_delta);
 
 std::unique_ptr<Shader> shader;
-std::unique_ptr<Cube> cube;
+std::unique_ptr<Model> mode;
+//std::unique_ptr<Cube> cube;
 
 
 int main(){
@@ -110,8 +113,8 @@ int main(){
 
 		update(time_delta);
 		
+		
 		draw();
-
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 
@@ -135,11 +138,12 @@ void init(GLFWwindow* window){
 
 	shader = std::make_unique<Shader>("../Shader/basic.vert",
 		"../Shader/basic.frag");
-	cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
+	//cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
+	mode = std::make_unique<Model>("../Nanosuit/nanosuit.obj");
 }
 void cleanup(){
 
-	cube.reset(nullptr);
+	//cube.reset(nullptr);
 	shader.reset(nullptr);
 	
 }
@@ -147,14 +151,20 @@ void draw(){
 	
 	shader->useShader();
 
-	auto& model = cube->modelMatrix;
-	auto model_location = glGetUniformLocation(shader->programHandle, "model");
-	glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model));
-	cube->draw();
+	//auto& model = cube->modelMatrix;
+	//auto model_location = glGetUniformLocation(shader->programHandle, "model");
+	//glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model));
+	//cube->draw();
+
+	glm::mat4 model;
+	//model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
+	model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
+	glUniformMatrix4fv(glGetUniformLocation(shader->programHandle, "model"), 1, GL_FALSE, glm::value_ptr(model));
+	mode->draw(shader.get());
 
 }
 void update(float time_delta){
-	cube->update(time_delta);
+	//cube->update(time_delta);
 }
 
 
