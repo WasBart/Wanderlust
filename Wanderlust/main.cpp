@@ -2,13 +2,11 @@
 #include <memory>
 #include <glew\glew.h>
 #include <GLFW\glfw3.h>
+#include <glm\glm.hpp>
 #include <sstream>
 #include "shader.h"
 #include "Cube.h"
 #include <Windows.h>
-
-
-
 
 
 using namespace cgue;
@@ -23,6 +21,7 @@ void update();
 
 std::unique_ptr<Shader> shader;
 std::unique_ptr<Cube> cube;
+bool drawMode = false;
 
 int main(){
 
@@ -38,6 +37,9 @@ int main(){
 #if _DEBUG
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 #endif
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	auto window = glfwCreateWindow(width, height, "CGUE", nullptr, nullptr);
 
@@ -84,7 +86,7 @@ int main(){
 
 
 	init(window);
-
+	glViewport(0, 0, 800, 600);
 	auto time = glfwGetTime();
 	while (!glfwWindowShouldClose(window)){
 
@@ -130,6 +132,7 @@ void cleanup(){
 	
 }
 void draw(){
+	
 	shader->useShader();
 	cube->draw();
 
