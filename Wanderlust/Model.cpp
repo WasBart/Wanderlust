@@ -1,5 +1,6 @@
 #include <glew\glew.h>
 #include <string>
+#include <FreeImage/FreeImage.h>
 #include "Model.h"
 #include "shader.h"
 
@@ -49,7 +50,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 {
 	std::vector<Vertex> vertices;
 	std::vector<GLuint> indices;
-	std::vector<Texture> textures;
+	std::vector<GLuint> textures;
 
 	for (GLuint i = 0; i < mesh->mNumVertices; i++)
 	{
@@ -89,33 +90,51 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 		if (mesh->mMaterialIndex >= 0)
 		{
 			//For Texturing:
-			/*if (mesh->mMaterialIndex >= 0)
+			if (mesh->mMaterialIndex >= 0)
 			{
 				aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
-				std::vector<Texture> diffuseMaps = this->loadMaterialTextures(material,
-					aiTextureType_DIFFUSE, "texture_diffuse");
-				textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-				std::vector<Texture> specularMaps = this->loadMaterialTextures(material,
-					aiTextureType_SPECULAR, "texture_specular");
-				textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
-			}*/
+				textures = loadMaterialTextures(material);
+			}
 		}
 
 	return Mesh(vertices, indices, textures);
 }
 //For Texturing:
-/*std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName)
+std::vector<GLuint> Model::loadMaterialTextures(aiMaterial* mat)
 {
-	std::vector<Texture> textures;
-	for (GLuint i = 0; i < mat->GetTextureCount(type); i++)
+	std::vector<GLuint> textures;
+	for (GLuint i = 0; i < mat->GetTextureCount(aiTextureType_DIFFUSE); i++)
 	{
 		aiString str;
-		mat->GetTexture(type, i, &str);
-		Texture texture;
-		texture.id = TextureFromFile(str.C_Str(), this->directory);
-		texture.type = typeName;
-		texture.path = str;
-		textures.push_back(texture);
+		mat->GetTexture(aiTextureType_DIFFUSE, i, &str);
+		textures.push_back(loadTexture(str.C_Str()));
 	}
+	
 	return textures;
-}*/
+
+
+}
+
+GLuint Model::loadTexture(std::string filePath)
+{
+	GLuint textureHandle = 0;
+	auto bitMap = FreeImage_Load(FIF_PNG, filePath.c_str());
+
+	if (bitMap == nullptr)
+	{
+		return textureHandle;
+	}
+
+	glGenTextures(1, &textureHandle);
+	glBindTexture(GL_TEXTURE_2D, textureHandle);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, FreeImage_GetWidth(bitMap), FreeImage_GetHeight(bitMap), 0, GL_BGRA, GL_UNSIGNED_BYTE, FreeImage_GetBits(bitMap));
+	FreeImage_Unload(bitMap);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+		GL_LINEAR_MIPMAP_LINEAR);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	return textureHandle;
+}

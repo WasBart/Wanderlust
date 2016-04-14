@@ -11,7 +11,7 @@
 #include "Mesh.h"
 //Could take place of SceneObject
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, std::vector<Texture> textures){
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, std::vector<GLuint> textures){
 
 	this->vertices = vertices;
 	this->indices = indices;
@@ -22,31 +22,9 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, std::vecto
 
 void Mesh::draw(cgue::Shader* shader){
 	// Binding textures
-	GLuint diffuseNr = 1;
-	GLuint specularNr = 1;
-	for (GLuint i = 0; i < this->textures.size(); i++)
-	{
-		glActiveTexture(GL_TEXTURE0 + i); 
-		
-		// Active proper texture unit before binding
-		// Retrieve texture number (the N in diffuse_textureN)
-
-		std::stringstream ss;
-		std::string number;
-		std::string name = this->textures[i].type;
-		if (name == "texture_diffuse")
-			ss << diffuseNr++; // Transfer GLuint to stream
-		else if (name == "texture_specular")
-			ss << specularNr++; // Transfer GLuint to stream
-		number = ss.str();
-		// Now set the sampler to the correct texture unit
-		glUniform1i(glGetUniformLocation(shader->programHandle, (name + number).c_str()), i);
-		// And finally bind the texture
-		glBindTexture(GL_TEXTURE_2D, this->textures[i].id);
-	}
-
-	// Standard Shininess, TODO: Think if we need this
-	glUniform1f(glGetUniformLocation(shader->programHandle , "material.shininess"), 16.0f);
+	glActiveTexture(GL_TEXTURE0); 
+	//glUniform1i(glGetUniformLocation(shader->programHandle, "TODO"), i);
+	glBindTexture(GL_TEXTURE_2D, this->textures[0]);
 
 	// Drawing mesh
 	glBindVertexArray(VAO);
@@ -54,11 +32,7 @@ void Mesh::draw(cgue::Shader* shader){
 	glBindVertexArray(0);
 
 	//Unbinding
-	for (GLuint i = 0; i < textures.size(); i++)
-	{
-		glActiveTexture(GL_TEXTURE0 + i);
-		glBindTexture(GL_TEXTURE_2D, 0);
-	}
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void Mesh::setupMesh()

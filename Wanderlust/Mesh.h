@@ -20,19 +20,14 @@ struct Vertex {
 	glm::vec2 TexCoords;
 };
 
-struct Texture {
-	GLuint id;
-	std::string type;
-};
-
 	class Mesh {
 	public:
 		/*  Mesh Data  */
 		std::vector<Vertex> vertices;
 		std::vector<GLuint> indices;
-		std::vector<Texture> textures;
+		std::vector<GLuint> textures;
 		/*  Functions  */
-		Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, std::vector<Texture> textures);
+		Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, std::vector<GLuint> textures);
 		void draw(cgue::Shader* shader);
 	private:
 		/*  Render data  */

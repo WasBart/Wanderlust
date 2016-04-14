@@ -14,6 +14,7 @@ public:
 	
 	Model(std::string path);
 	void draw(cgue::Shader* shader);
+	GLuint Model::loadTexture(std::string filePath);
 private:
 	
 	std::vector<Mesh> meshes;
@@ -23,6 +24,5 @@ private:
 	void processNode(aiNode* node, const aiScene* scene);
 	Mesh processMesh(aiMesh* mesh, const aiScene* scene);
 	//For Textures;
-	/*std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type,
-		std::string typeName)*/;
+	std::vector<GLuint> loadMaterialTextures(aiMaterial* mat);
 };
