@@ -27,6 +27,8 @@ void update(float time_delta);
 
 std::unique_ptr<Shader> shader;
 std::unique_ptr<Model> mode;
+glm::mat4 persp;
+glm::vec3 cameraPos;
 //std::unique_ptr<Cube> cube;
 
 
@@ -40,6 +42,7 @@ int main(){
 
 	const int width = 800;
 	const int height = 600;
+	
 
 #if _DEBUG
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
@@ -98,7 +101,6 @@ int main(){
 	glClearColor(0.35f, 0.36f, 0.43f, 0.3f);
 	glViewport(0, 0, width, height);
 	
-
 	auto time = glfwGetTime();
 	while (!glfwWindowShouldClose(window)){
 
@@ -152,14 +154,26 @@ void draw(){
 	shader->useShader();
 
 	//auto& model = cube->modelMatrix;
-	//auto model_location = glGetUniformLocation(shader->programHandle, "model");
+	
 	//glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model));
 	//cube->draw();
 
 	glm::mat4 model;
-	//model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
-	model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
-	glUniformMatrix4fv(glGetUniformLocation(shader->programHandle, "model"), 1, GL_FALSE, glm::value_ptr(model));
+	glm::mat4 view;
+	glm::mat4 projection; 
+	
+	view = glm::translate(view, glm::vec3(0.0f, -10.0f, -20.0f));
+	projection = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
+
+	GLint model_location = glGetUniformLocation(shader->programHandle, "model");
+	glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model));
+
+	GLint model_view = glGetUniformLocation(shader->programHandle, "view");
+	glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
+
+	GLint model_projection = glGetUniformLocation(shader->programHandle, "projection");
+	glUniformMatrix4fv(model_projection, 1, GL_FALSE, glm::value_ptr(projection));
+
 	mode->draw(shader.get());
 
 }
