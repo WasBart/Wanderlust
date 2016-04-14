@@ -117,6 +117,7 @@ int main(){
 		
 		
 		draw();
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 
@@ -142,31 +143,15 @@ void init(GLFWwindow* window){
 		"../Shader/basic.frag");
 	//cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
 	mode = std::make_unique<Model>("../Nanosuit/nanosuit.obj");
-}
-void cleanup(){
-
-	//cube.reset(nullptr);
-	shader.reset(nullptr);
-	
-}
-void draw(){
 	
 	shader->useShader();
 
-	//auto& model = cube->modelMatrix;
-	
-	//glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model));
-	//cube->draw();
-
-	glm::mat4 model;
 	glm::mat4 view;
-	glm::mat4 projection; 
-	
+	glm::mat4 projection;
+
 	view = glm::translate(view, glm::vec3(0.0f, -10.0f, -20.0f));
 	projection = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
 
-	GLint model_location = glGetUniformLocation(shader->programHandle, "model");
-	glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model));
 
 	GLint model_view = glGetUniformLocation(shader->programHandle, "view");
 	glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
@@ -174,11 +159,28 @@ void draw(){
 	GLint model_projection = glGetUniformLocation(shader->programHandle, "projection");
 	glUniformMatrix4fv(model_projection, 1, GL_FALSE, glm::value_ptr(projection));
 
+}
+void cleanup(){
+
+	//cube.reset(nullptr);
+	mode.reset(nullptr);
+	shader.reset(nullptr);
+	
+}
+void draw(){
+	
+	
+
+	glm::mat4 model;
+	
+	GLint model_location = glGetUniformLocation(shader->programHandle, "model");
+	glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model));
+
 	mode->draw(shader.get());
 
 }
 void update(float time_delta){
-	//cube->update(time_delta);
+	mode->update(time_delta);
 }
 
 

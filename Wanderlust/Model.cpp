@@ -16,6 +16,12 @@ void Model::draw(cgue::Shader* shader){
 	}
 }
 
+void Model::update(float time_delta){
+	for (GLuint i = 0; i < this->meshes.size(); i++){
+		this->meshes[i].update(time_delta);
+	}
+}
+
 void Model::loadModel(std::string path)
 {
 	Assimp::Importer import;
