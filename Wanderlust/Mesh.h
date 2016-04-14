@@ -1,12 +1,14 @@
 #pragma once
-// Std. Includes
+
+//A Model contains several Meshes
+
 #include <string>
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <vector>
 
-#include <glew/glew.h> // Contains all the necessery OpenGL includes
+#include <glew/glew.h> 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -27,16 +29,21 @@ struct Texture {
 
 	class Mesh {
 	public:
-		/*  Mesh Data  */
+		Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, std::vector<Texture> textures);
+	
+
 		std::vector<Vertex> vertices;
 		std::vector<GLuint> indices;
 		std::vector<Texture> textures;
-		/*  Functions  */
-		Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, std::vector<Texture> textures);
+
+
 		void draw(cgue::Shader* shader);
+		void update(float time_delta);
+		
+		
+		
 	private:
-		/*  Render data  */
+		
 		GLuint VAO, VBO, EBO;
-		/*  Functions    */
 		void setupMesh();
 	};

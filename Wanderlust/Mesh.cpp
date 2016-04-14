@@ -4,12 +4,11 @@
 #include <iostream>
 #include <vector>
 
-#include <glew/glew.h> // Contains all the necessery OpenGL includes
+#include <glew/glew.h> 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Mesh.h"
-//Could take place of SceneObject
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, std::vector<Texture> textures){
 
@@ -45,7 +44,7 @@ void Mesh::draw(cgue::Shader* shader){
 		glBindTexture(GL_TEXTURE_2D, this->textures[i].id);
 	}
 
-	// Standard Shininess, TODO: Think if we need this
+	// Standard Shininess
 	glUniform1f(glGetUniformLocation(shader->programHandle , "material.shininess"), 16.0f);
 
 	// Drawing mesh
@@ -60,16 +59,15 @@ void Mesh::draw(cgue::Shader* shader){
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 }
+void Mesh::update(float time_delta){
+	//modelMatrix = glm::rotate(modelMatrix, 90.0f*time_delta, glm::vec3(0, 1, 0));
+}
 
 void Mesh::setupMesh()
 {
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
 
-	
-	
-
-	
 	// Loading data into vertex buffers
 	glGenBuffers(1, &VBO); //positionBuffer in Cube
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);

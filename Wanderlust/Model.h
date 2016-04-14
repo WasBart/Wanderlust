@@ -14,6 +14,9 @@ public:
 	
 	Model(std::string path);
 	void draw(cgue::Shader* shader);
+	void update(float time_delta);
+
+
 private:
 	
 	std::vector<Mesh> meshes;
@@ -22,6 +25,7 @@ private:
 	void loadModel(std::string path);
 	void processNode(aiNode* node, const aiScene* scene);
 	Mesh processMesh(aiMesh* mesh, const aiScene* scene);
+	
 	//For Textures;
 	/*std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type,
 		std::string typeName)*/;
