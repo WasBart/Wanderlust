@@ -73,8 +73,6 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 		vector.z = mesh->mNormals[i].z;
 		vertex.Normal = vector;
 
-		vertices.push_back(vertex);
-
 		if (mesh->mTextureCoords[0]) // Does the mesh contain texture coordinates?
 		{
 			glm::vec2 vec;
@@ -84,6 +82,8 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 		}
 		else
 			vertex.TexCoords = glm::vec2(0.0f, 0.0f);
+
+		vertices.push_back(vertex);
 	}
 	// Process indices
 	for (GLuint i = 0; i < mesh->mNumFaces; i++)
