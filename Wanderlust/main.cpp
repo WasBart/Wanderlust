@@ -100,7 +100,9 @@ int main(){
 
 	glClearColor(0.35f, 0.36f, 0.43f, 0.3f);
 	glViewport(0, 0, width, height);
-	
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+
 	auto time = glfwGetTime();
 	while (!glfwWindowShouldClose(window)){
 
@@ -108,25 +110,47 @@ int main(){
 		auto time_delta = (float)(time_new - time);
 		time = time_new;
 
-		std::cout << "frametime:" << time_delta * 1000 << "ms"
-			<< " =~" << 1.0 / time_delta << "fps" << std::endl;
+		/*std::cout << "frametime:" << time_delta * 1000 << "ms"
+			<< " =~" << 1.0 / time_delta << "fps" << std::endl;*/
 
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		update(time_delta);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+		//update(time_delta);
 		
 		
 		draw();
-
+		
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 
 		if (glfwGetKey(window, GLFW_KEY_ESCAPE)){
 			glfwSetWindowShouldClose(window, true);
 		}
-
+		
 		if (glfwGetKey(window, GLFW_KEY_F1)){
 			glTranslatef(0.0f, 0.0f, 0.0f);
+		}
+
+		if (glfwGetKey(window, GLFW_KEY_A)){
+			mode->positon.x -= 10 * time_delta;
+			std::cout << mode->positon.x << std::endl;
+			mode->update(time_delta);
+		}
+		else if (glfwGetKey(window, GLFW_KEY_D)){
+			mode->positon.x += 10* time_delta;
+			std::cout << mode->positon.x << std::endl;
+			mode->update(time_delta);	
+		}
+
+		if (glfwGetKey(window, GLFW_KEY_W)){
+			mode->positon.z -= 10 * time_delta;
+			std::cout << mode->positon.x << std::endl;
+			mode->update(time_delta);
+		}
+		else if (glfwGetKey(window, GLFW_KEY_S)){
+			mode->positon.z += 10 * time_delta;
+			std::cout << mode->positon.x << std::endl;
+			mode->update(time_delta);
 		}
 	}
 
@@ -142,7 +166,7 @@ void init(GLFWwindow* window){
 	shader = std::make_unique<Shader>("../Shader/basic.vert",
 		"../Shader/basic.frag");
 	//cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
-	mode = std::make_unique<Model>("../Nanosuit/nanosuit.obj");
+	mode = std::make_unique<Model>("../nanosuit/nanosuit.obj");
 	
 	shader->useShader();
 
@@ -170,11 +194,8 @@ void cleanup(){
 void draw(){
 	
 	
-
-	glm::mat4 model;
 	
-	GLint model_location = glGetUniformLocation(shader->programHandle, "model");
-	glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model));
+	glm::mat4 model;
 
 	mode->draw(shader.get());
 

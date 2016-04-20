@@ -30,8 +30,8 @@ struct Vertex {
 		/*  Functions  */
 		Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, std::vector<GLuint> textures);
 		void draw(cgue::Shader* shader);
-		void update(float time_delta);
-		
+		void update(float time_delta, glm::mat4 operation);
+		glm::mat4 modelMatrix;
 		
 		
 	private:

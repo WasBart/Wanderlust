@@ -10,6 +10,8 @@
 
 #include "Mesh.h"
 
+#include <glm/gtc/type_ptr.hpp>
+
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, std::vector<GLuint> textures){
 
 	this->vertices = vertices;
@@ -18,7 +20,9 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, std::vecto
 
 	this->setupMesh();
 };
-
+/*
+Drawing Mesh
+*/
 void Mesh::draw(cgue::Shader* shader){
 	// Binding textures
 	glActiveTexture(GL_TEXTURE0); 
@@ -26,6 +30,7 @@ void Mesh::draw(cgue::Shader* shader){
 	glBindTexture(GL_TEXTURE_2D, this->textures[0]);
 
 	// Drawing mesh
+	glUniformMatrix4fv(4, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
@@ -33,10 +38,15 @@ void Mesh::draw(cgue::Shader* shader){
 	//Unbinding
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
-void Mesh::update(float time_delta){
-	//modelMatrix = glm::rotate(modelMatrix, 90.0f*time_delta, glm::vec3(0, 1, 0));
-}
 
+void Mesh::update(float time_delta, glm::mat4 operation){
+
+	modelMatrix = operation;
+	glUniformMatrix4fv(4, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+}
+/*
+Setting up VAO, VBO, and EBO
+*/
 void Mesh::setupMesh()
 {
 	glGenVertexArrays(1, &VAO);

@@ -8,7 +8,7 @@ out vec3 worldNormal;
 out vec2 fragmentUV;
 
 
-uniform mat4 model; 
+layout (location = 4) uniform mat4 model; 
 uniform mat4 view;
 uniform mat4 projection;
 

@@ -3,22 +3,30 @@
 #include <FreeImage/FreeImage.h>
 #include "Model.h"
 #include "shader.h"
-
+#include <glm\glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 Model::Model(std::string path)
 {
 	this->loadModel(path);
 };
-
+/*
+Drawing all Meshes from this Model
+*/
 void Model::draw(cgue::Shader* shader){
 	for (GLuint i = 0; i < this->meshes.size(); i++){
 		this->meshes[i].draw(shader);
 	}
 }
 
+/*
+Updating all Meshes from this Model
+*/
 void Model::update(float time_delta){
+	glm::mat4 model;
+	model = glm::translate(model, positon);
 	for (GLuint i = 0; i < this->meshes.size(); i++){
-		this->meshes[i].update(time_delta);
+		this->meshes[i].update(time_delta, model);
 	}
 }
 
@@ -81,7 +89,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 			vertex.TexCoords = vec;
 		}
 		else
-			vertex.TexCoords = glm::vec2(0.0f, 0.0f);
+		vertex.TexCoords = glm::vec2(0.0f, 0.0f);
 
 		vertices.push_back(vertex);
 	}

@@ -16,6 +16,8 @@ public:
 	void draw(cgue::Shader* shader);
 	GLuint Model::loadTexture(std::string filePath);
 	void update(float time_delta);
+	glm::vec3 positon;
+
 private:
 	
 	std::vector<Mesh> meshes;
