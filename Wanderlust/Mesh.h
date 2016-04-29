@@ -32,6 +32,7 @@ struct Vertex {
 		void draw(cgue::Shader* shader);
 		void update(glm::mat4 operation);
 		glm::mat4 modelMatrix;
+		glm::mat4 viewMatrix;
 		
 		
 	private:

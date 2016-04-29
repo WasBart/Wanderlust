@@ -18,6 +18,7 @@ public:
 	void update();
 	glm::vec3 position;
 	GLfloat angle;
+	glm::mat4 viewMatrix;
 
 private:
 	

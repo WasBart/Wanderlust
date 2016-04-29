@@ -9,7 +9,7 @@ out vec2 fragmentUV;
 out vec3 fragPos;  
 
 layout (location = 4) uniform mat4 model; 
-uniform mat4 view;
+layout (location = 5) uniform mat4 view;
 uniform mat4 projection;
 
 void main()

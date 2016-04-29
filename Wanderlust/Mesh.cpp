@@ -33,6 +33,8 @@ void Mesh::draw(cgue::Shader* shader){
 	}
 	// Drawing mesh
 	glUniformMatrix4fv(4, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+	glUniformMatrix4fv(5, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+	
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
@@ -42,9 +44,7 @@ void Mesh::draw(cgue::Shader* shader){
 }
 
 void Mesh::update(glm::mat4 operation){
-
 	modelMatrix = operation;
-	//TODO: Think where to put:glUniformMatrix4fv(4, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 }
 /*
 Setting up VAO, VBO, and EBO

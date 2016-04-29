@@ -15,6 +15,7 @@ Drawing all Meshes from this Model
 */
 void Model::draw(cgue::Shader* shader){
 	for (GLuint i = 0; i < this->meshes.size(); i++){
+		this->meshes[i].viewMatrix = viewMatrix;
 		this->meshes[i].draw(shader);
 	}
 }

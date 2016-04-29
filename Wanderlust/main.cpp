@@ -31,6 +31,7 @@ std::unique_ptr<Shader> sunShader;
 std::unique_ptr<Model> player;
 std::unique_ptr<Model> sun;
 glm::mat4 persp;
+glm::mat4 view;
 glm::vec3 cameraPos;
 //std::unique_ptr<Cube> cube;
 
@@ -142,7 +143,6 @@ int main(){
 			player->position.x -= 10 * time_delta;
 			player->update();
 
-			glm::mat4 view;
 			view = cam->update(glm::vec3(cam-> eyeX -= 10 * time_delta, cam->eyeY, cam ->eyeZ), player->position);
 			GLint model_view = glGetUniformLocation(shader->programHandle, "view");
 			glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
@@ -186,13 +186,14 @@ void init(GLFWwindow* window)
 
 	shader->useShader();
 	
-	glm::mat4 view;
 	glm::mat4 projection;
 
 	view = cam->setUp(player->position);
+
 	projection = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
 	
-	glm::vec3 lightPos(1.2f, 18.0f, 5.0f);
+
+	player->viewMatrix = view;
 
 	GLint model_view = glGetUniformLocation(shader->programHandle, "view");
 	glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
@@ -200,9 +201,6 @@ void init(GLFWwindow* window)
 	GLint model_projection = glGetUniformLocation(shader->programHandle, "projection");
 	glUniformMatrix4fv(model_projection, 1, GL_FALSE, glm::value_ptr(projection));
 
-	/*GLint lightPosLoc = glGetUniformLocation(shader->programHandle, "lightPos");
-	glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);*/
-	
 	GLint lightAmbientLoc = glGetUniformLocation(shader->programHandle, "light.ambient");
 	GLint lightDiffuseLoc = glGetUniformLocation(shader->programHandle, "light.diffuse");
 	GLint lightDirectionLoc = glGetUniformLocation(shader->programHandle, "light.direction");
@@ -213,14 +211,15 @@ void init(GLFWwindow* window)
 	
 	sunShader->useShader();
 	
+	glm::vec3 lightPos(1.0f, 18.0f, -3.0f);
 	sun->position = lightPos;
+	sun->viewMatrix = view;
 	sun->update();
-	glm::mat4 model = glm::translate(model, lightPos);
-	model = glm::scale(model, glm::vec3(1));
 
 	GLint modelLoc = glGetUniformLocation(sunShader->programHandle, "model");
 	GLint viewLoc = glGetUniformLocation(sunShader->programHandle, "view");
 	GLint projLoc = glGetUniformLocation(sunShader->programHandle, "projection");
+	
 	// Set matrices
 	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
@@ -239,17 +238,15 @@ void cleanup()
 	
 }
 void draw(){
-	
-	
-	
-	glm::mat4 model;
-	
+			
 	shader->useShader();
+	player->viewMatrix = view;
 	player->draw(shader.get());
 
 	sunShader->useShader();
+	sun->viewMatrix = view;
 	sun->draw(sunShader.get());
-
+	
 }
 
 void update(float time_delta)
