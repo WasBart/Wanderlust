@@ -22,11 +22,12 @@ void Model::draw(cgue::Shader* shader){
 /*
 Updating all Meshes from this Model
 */
-void Model::update(float time_delta){
+void Model::update(){
 	glm::mat4 model;
-	model = glm::translate(model, positon);
+	model = glm::translate(model, position);
+	model = glm::rotate(model,angle,glm::vec3(0,1,0));
 	for (GLuint i = 0; i < this->meshes.size(); i++){
-		this->meshes[i].update(time_delta, model);
+		this->meshes[i].update(model);
 	}
 }
 
@@ -132,6 +133,8 @@ std::vector<GLuint> Model::loadMaterialTextures(aiMaterial* mat)
 GLuint Model::loadTexture(std::string filePath)
 {
 	GLuint textureHandle = 0;
+	filePath.insert(0, std::string("../Textures/"));
+	std::cout << filePath << std::endl;
 	auto bitMap = FreeImage_Load(FIF_PNG, filePath.c_str());
 
 	if (bitMap == nullptr)
@@ -142,7 +145,15 @@ GLuint Model::loadTexture(std::string filePath)
 	glGenTextures(1, &textureHandle);
 	glBindTexture(GL_TEXTURE_2D, textureHandle);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, FreeImage_GetWidth(bitMap), FreeImage_GetHeight(bitMap), 0, GL_BGRA, GL_UNSIGNED_BYTE, FreeImage_GetBits(bitMap));
+	//if no alpha bits < 32 (24)
+	int a = 0;
+	if ((a=FreeImage_GetBPP(bitMap)) < 32){
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, FreeImage_GetWidth(bitMap), FreeImage_GetHeight(bitMap), 0, GL_BGR, GL_UNSIGNED_BYTE, FreeImage_GetBits(bitMap));
+	}
+	//else tex has alpha
+	else{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, FreeImage_GetWidth(bitMap), FreeImage_GetHeight(bitMap), 0, GL_BGRA, GL_UNSIGNED_BYTE, FreeImage_GetBits(bitMap));
+	}
 	FreeImage_Unload(bitMap);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

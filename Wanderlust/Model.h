@@ -15,8 +15,9 @@ public:
 	Model(std::string path);
 	void draw(cgue::Shader* shader);
 	GLuint Model::loadTexture(std::string filePath);
-	void update(float time_delta);
-	glm::vec3 positon;
+	void update();
+	glm::vec3 position;
+	GLfloat angle;
 
 private:
 	

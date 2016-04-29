@@ -10,7 +10,7 @@
 
 	void Camera::setUp(GLdouble centerX, GLdouble centerY, GLdouble centerZ)
 	{
-		//gluLookAt(this->eyeX, this->eyeY, this->eyeZ, centerX, centerY, centerZ, 0, -1, 0);
+		//gluLookAt(this->eyeX, this->eyeY, this->eyeZ, centerX, centerY, centerZ, 0, 1, 0);
 	}
 
 	void Camera::update(GLdouble centerX, GLdouble centerY, GLdouble centerZ)
