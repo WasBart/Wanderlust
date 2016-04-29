@@ -13,6 +13,7 @@
 #include <Windows.h>
 #include "Model.h"
 #include "Mesh.h"
+#include "Camera.h"
 
 
 using namespace cgue;
@@ -27,6 +28,7 @@ void update(float time_delta);
 
 std::unique_ptr<Shader> shader;
 std::unique_ptr<Model> mode;
+std::unique_ptr<Camera> cam;
 glm::mat4 persp;
 glm::vec3 cameraPos;
 //std::unique_ptr<Cube> cube;
@@ -132,9 +134,17 @@ int main(){
 		}
 
 		if (glfwGetKey(window, GLFW_KEY_A)){
+			glm::vec3 oldPosition = mode->positon;
 			mode->positon.x -= 10 * time_delta;
 			std::cout << mode->positon.x << std::endl;
 			mode->update(time_delta);
+
+			glm::mat4 view;
+			view = cam->update(glm::vec3(cam-> eyeX -= 10 * time_delta, cam->eyeY, cam ->eyeZ), mode->positon);
+			GLint model_view = glGetUniformLocation(shader->programHandle, "view");
+			glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
+			
+
 		}
 		else if (glfwGetKey(window, GLFW_KEY_D)){
 			mode->positon.x += 10* time_delta;
@@ -167,13 +177,14 @@ void init(GLFWwindow* window){
 		"../Shader/basic.frag");
 	//cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
 	mode = std::make_unique<Model>("../nanosuit/nanosuit.obj");
-	
+	cam = std::make_unique<Camera>(0.0f, 15.0f, 30.0f);
+
 	shader->useShader();
 
 	glm::mat4 view;
 	glm::mat4 projection;
 
-	view = glm::translate(view, glm::vec3(0.0f, -10.0f, -20.0f));
+	view = cam->setUp(mode->positon);
 	projection = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
 
 
@@ -189,6 +200,7 @@ void cleanup(){
 	//cube.reset(nullptr);
 	mode.reset(nullptr);
 	shader.reset(nullptr);
+	cam.reset(nullptr);
 	
 }
 void draw(){
