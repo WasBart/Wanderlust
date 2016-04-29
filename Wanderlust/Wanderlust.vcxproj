@@ -93,6 +93,7 @@
     <ClCompile Include="shader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="shader.h" />
@@ -100,6 +101,10 @@
   <ItemGroup>
     <None Include="..\Shader\basic.frag" />
     <None Include="..\Shader\basic.vert" />
+    <None Include="..\Shader\sun.frag" />
+    <None Include="..\Shader\sun.vert" />
+    <None Include="..\Shader\toon.frag" />
+    <None Include="..\Shader\toon.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

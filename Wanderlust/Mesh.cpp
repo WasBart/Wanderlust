@@ -25,10 +25,12 @@ Drawing Mesh
 */
 void Mesh::draw(cgue::Shader* shader){
 	// Binding textures
-	glActiveTexture(GL_TEXTURE0); 
-	//glUniform1i(glGetUniformLocation(shader->programHandle, "TODO"), i);
-	glBindTexture(GL_TEXTURE_2D, this->textures[0]);
 
+	if (textures.size() > 0){
+		glActiveTexture(GL_TEXTURE0);
+		//glUniform1i(glGetUniformLocation(shader->programHandle, "TODO"), i);
+		glBindTexture(GL_TEXTURE_2D, this->textures[0]);
+	}
 	// Drawing mesh
 	glUniformMatrix4fv(4, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 	glBindVertexArray(VAO);
@@ -39,10 +41,10 @@ void Mesh::draw(cgue::Shader* shader){
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void Mesh::update(float time_delta, glm::mat4 operation){
+void Mesh::update(glm::mat4 operation){
 
 	modelMatrix = operation;
-	glUniformMatrix4fv(4, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+	//TODO: Think where to put:glUniformMatrix4fv(4, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 }
 /*
 Setting up VAO, VBO, and EBO

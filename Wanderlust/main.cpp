@@ -15,7 +15,6 @@
 #include "Mesh.h"
 #include "Camera.h"
 
-
 using namespace cgue;
 using namespace cgue::scene;
 
@@ -27,8 +26,10 @@ void draw();
 void update(float time_delta);
 
 std::unique_ptr<Shader> shader;
-std::unique_ptr<Model> mode;
 std::unique_ptr<Camera> cam;
+std::unique_ptr<Shader> sunShader;
+std::unique_ptr<Model> player;
+std::unique_ptr<Model> sun;
 glm::mat4 persp;
 glm::vec3 cameraPos;
 //std::unique_ptr<Cube> cube;
@@ -36,7 +37,8 @@ glm::vec3 cameraPos;
 
 int main(){
 
-	if (!glfwInit()){
+	if (!glfwInit())
+	{
 		std::cerr << "Could not init glfw!" << std::endl;
 		system("Pause");
 		exit(EXIT_FAILURE);
@@ -55,7 +57,8 @@ int main(){
 
 	auto window = glfwCreateWindow(width, height, "CGUE", nullptr, nullptr);
 
-	if (!window){
+	if (!window)
+	{
 		std::cerr << ("ERROR : Could not create window!") << std::endl;
 		glfwTerminate();
 		system("Pause");
@@ -65,7 +68,8 @@ int main(){
 	glfwMakeContextCurrent(window);
 
 	glewExperimental = true;
-	if (glewInit() != GLEW_OK){
+	if (glewInit() != GLEW_OK)
+	{
 		std::cerr << ("ERROR : Could not load glew!") << std::endl;
 		glfwTerminate();
 		system("Pause");
@@ -102,11 +106,13 @@ int main(){
 
 	glClearColor(0.35f, 0.36f, 0.43f, 0.3f);
 	glViewport(0, 0, width, height);
+	
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
 	auto time = glfwGetTime();
-	while (!glfwWindowShouldClose(window)){
+	while (!glfwWindowShouldClose(window))
+	{
 
 		auto time_new = glfwGetTime();
 		auto time_delta = (float)(time_new - time);
@@ -117,50 +123,45 @@ int main(){
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-		//update(time_delta);
-		
-		
 		draw();
 		
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 
-		if (glfwGetKey(window, GLFW_KEY_ESCAPE)){
+		if (glfwGetKey(window, GLFW_KEY_ESCAPE))
+		{
 			glfwSetWindowShouldClose(window, true);
 		}
 		
-		if (glfwGetKey(window, GLFW_KEY_F1)){
+		if (glfwGetKey(window, GLFW_KEY_F1))
+		{
 			glTranslatef(0.0f, 0.0f, 0.0f);
 		}
 
 		if (glfwGetKey(window, GLFW_KEY_A)){
-			glm::vec3 oldPosition = mode->positon;
-			mode->positon.x -= 10 * time_delta;
-			std::cout << mode->positon.x << std::endl;
-			mode->update(time_delta);
+			player->position.x -= 10 * time_delta;
+			player->update();
 
 			glm::mat4 view;
-			view = cam->update(glm::vec3(cam-> eyeX -= 10 * time_delta, cam->eyeY, cam ->eyeZ), mode->positon);
+			view = cam->update(glm::vec3(cam-> eyeX -= 10 * time_delta, cam->eyeY, cam ->eyeZ), player->position);
 			GLint model_view = glGetUniformLocation(shader->programHandle, "view");
 			glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
-			
-
 		}
-		else if (glfwGetKey(window, GLFW_KEY_D)){
-			mode->positon.x += 10* time_delta;
-			std::cout << mode->positon.x << std::endl;
-			mode->update(time_delta);	
+		else if (glfwGetKey(window, GLFW_KEY_D))
+		{
+			player->position.x += 10* time_delta;
+			player->update();
 		}
 
-		if (glfwGetKey(window, GLFW_KEY_W)){
-			mode->positon.z -= 10 * time_delta;
-			std::cout << mode->positon.x << std::endl;
-			mode->update(time_delta);
+		if (glfwGetKey(window, GLFW_KEY_W))
+		{
+			player->position.z -= 10 * time_delta;
+			player->update();
 		}
-		else if (glfwGetKey(window, GLFW_KEY_S)){
-			mode->positon.z += 10 * time_delta;
-			std::cout << mode->positon.x << std::endl;
-			mode->update(time_delta);
+		else if (glfwGetKey(window, GLFW_KEY_S))
+		{
+			player->position.z += 10 * time_delta;
+			player->update();
 		}
 	}
 
@@ -171,22 +172,27 @@ int main(){
 	return EXIT_SUCCESS;
 }
 
-void init(GLFWwindow* window){
+void init(GLFWwindow* window)
+{
 
-	shader = std::make_unique<Shader>("../Shader/basic.vert",
-		"../Shader/basic.frag");
+	shader = std::make_unique<Shader>("../Shader/toon.vert",
+		"../Shader/toon.frag");
+	sunShader = std::make_unique<Shader>("../Shader/sun.vert",
+		"../Shader/sun.frag");
 	//cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
-	mode = std::make_unique<Model>("../nanosuit/nanosuit.obj");
 	cam = std::make_unique<Camera>(0.0f, 15.0f, 30.0f);
+	player = std::make_unique<Model>("../nanosuit/nanosuit.obj");
+	sun = std::make_unique<Model>("../Models/sun.dae");
 
 	shader->useShader();
-
+	
 	glm::mat4 view;
 	glm::mat4 projection;
 
-	view = cam->setUp(mode->positon);
+	view = cam->setUp(player->position);
 	projection = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
-
+	
+	glm::vec3 lightPos(1.2f, 18.0f, 5.0f);
 
 	GLint model_view = glGetUniformLocation(shader->programHandle, "view");
 	glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
@@ -194,11 +200,40 @@ void init(GLFWwindow* window){
 	GLint model_projection = glGetUniformLocation(shader->programHandle, "projection");
 	glUniformMatrix4fv(model_projection, 1, GL_FALSE, glm::value_ptr(projection));
 
-}
-void cleanup(){
+	/*GLint lightPosLoc = glGetUniformLocation(shader->programHandle, "lightPos");
+	glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);*/
+	
+	GLint lightAmbientLoc = glGetUniformLocation(shader->programHandle, "light.ambient");
+	GLint lightDiffuseLoc = glGetUniformLocation(shader->programHandle, "light.diffuse");
+	GLint lightDirectionLoc = glGetUniformLocation(shader->programHandle, "light.direction");
 
-	//cube.reset(nullptr);
-	mode.reset(nullptr);
+	glUniform3f(lightDirectionLoc, -1.0f, -1.0f, -1.0f);
+	glUniform3f(lightAmbientLoc, 0.2f, 0.2f, 0.2f);
+	glUniform3f(lightDiffuseLoc, 1.0f, 1.0f, 1.0f);
+	
+	sunShader->useShader();
+	
+	sun->position = lightPos;
+	sun->update();
+	glm::mat4 model = glm::translate(model, lightPos);
+	model = glm::scale(model, glm::vec3(1));
+
+	GLint modelLoc = glGetUniformLocation(sunShader->programHandle, "model");
+	GLint viewLoc = glGetUniformLocation(sunShader->programHandle, "view");
+	GLint projLoc = glGetUniformLocation(sunShader->programHandle, "projection");
+	// Set matrices
+	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+	
+	
+	player->angle = glm::pi<float>();
+	player->update();
+
+}
+void cleanup()
+{
+
+	player.reset(nullptr);
 	shader.reset(nullptr);
 	cam.reset(nullptr);
 	
@@ -208,12 +243,18 @@ void draw(){
 	
 	
 	glm::mat4 model;
+	
+	shader->useShader();
+	player->draw(shader.get());
 
-	mode->draw(shader.get());
+	sunShader->useShader();
+	sun->draw(sunShader.get());
 
 }
-void update(float time_delta){
-	mode->update(time_delta);
+
+void update(float time_delta)
+{
+	player->update();
 }
 
 
@@ -344,7 +385,7 @@ static std::string FormatDebugOutput(GLenum source, GLenum type, GLuint id, GLen
 		break;
 	}
 	}
-
+	
 	stringStream << "OpenGL Error: " << msg;
 	stringStream << " [Source = " << sourceString;
 	stringStream << ", Type = " << typeString;
