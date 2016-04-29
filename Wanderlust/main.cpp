@@ -151,17 +151,29 @@ int main(){
 		{
 			player->position.x += 10* time_delta;
 			player->update();
+
+			view = cam->update(glm::vec3(cam->eyeX += 10 * time_delta, cam->eyeY, cam->eyeZ), player->position);
+			GLint model_view = glGetUniformLocation(shader->programHandle, "view");
+			glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
 		}
 
 		if (glfwGetKey(window, GLFW_KEY_W))
 		{
 			player->position.z -= 10 * time_delta;
 			player->update();
+
+			view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ -= 10 * time_delta), player->position);
+			GLint model_view = glGetUniformLocation(shader->programHandle, "view");
+			glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
 		}
 		else if (glfwGetKey(window, GLFW_KEY_S))
 		{
 			player->position.z += 10 * time_delta;
 			player->update();
+
+			view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ += 10 * time_delta), player->position);
+			GLint model_view = glGetUniformLocation(shader->programHandle, "view");
+			glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
 		}
 	}
 
@@ -235,6 +247,7 @@ void cleanup()
 	player.reset(nullptr);
 	shader.reset(nullptr);
 	cam.reset(nullptr);
+	sun.reset(nullptr);
 	
 }
 void draw(){
