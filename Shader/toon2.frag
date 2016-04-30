@@ -27,6 +27,7 @@ struct Light
 
 uniform Material mat;
 uniform Light light; 
+const float levels = 3.0;
 
 void main()
 {
@@ -39,6 +40,7 @@ void main()
 	vec3 norm = normalize(worldNormal);
     vec3 lightDir = normalize(-light.direction);
 	float diff = max(dot(norm, lightDir), 0.0);
+	diff = floor(diff * levels) / levels;
 	vec3 diffuse = diff * mat.diffuse * light.diffuse;
 	
     vec3 textureColor = texture(tex, fragmentUV).rgb;

@@ -58,13 +58,10 @@
     <None Include="..\Shader\sun.frag">
       <Filter>Shader</Filter>
     </None>
-    <None Include="..\Shader\sun.vert">
-      <Filter>Shader</Filter>
-    </None>
-    <None Include="..\Shader\toon.vert">
-      <Filter>Shader</Filter>
-    </None>
     <None Include="..\Shader\toon.frag">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="..\Shader\toon2.frag">
       <Filter>Shader</Filter>
     </None>
   </ItemGroup>

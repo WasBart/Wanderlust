@@ -6,6 +6,7 @@ in vec3 worldNormal;
 in vec2 fragmentUV;
 in vec3 fragPos;
 
+
 uniform sampler2D tex;
 
 struct Light
@@ -50,6 +51,6 @@ void main()
 
 	vec3 textureColor = texture(tex, fragmentUV).rgb;
 
-	vec3 result = (ambient + diffuse);//*textureColor;
+	vec3 result = (ambient + diffuse) * textureColor;
 	fragColor = vec4(result,1.0);
 }

@@ -102,9 +102,8 @@
     <None Include="..\Shader\basic.frag" />
     <None Include="..\Shader\basic.vert" />
     <None Include="..\Shader\sun.frag" />
-    <None Include="..\Shader\sun.vert" />
     <None Include="..\Shader\toon.frag" />
-    <None Include="..\Shader\toon.vert" />
+    <None Include="..\Shader\toon2.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

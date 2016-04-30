@@ -32,7 +32,6 @@ void Mesh::draw(cgue::Shader* shader){
 		glBindTexture(GL_TEXTURE_2D, this->textures[0]);
 	}
 	// Drawing mesh
-	//modelMatrix = glm::rotate(modelMatrix, 1.0f * (glm::pi<float>() / 180.0f), glm::vec3(0, 1, 0));
 	glUniformMatrix4fv(4, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 	glUniformMatrix4fv(5, 1, GL_FALSE, glm::value_ptr(viewMatrix));
 	

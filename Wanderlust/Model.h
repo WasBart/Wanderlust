@@ -16,8 +16,8 @@ public:
 	void draw(cgue::Shader* shader);
 	GLuint Model::loadTexture(std::string filePath);
 	void update();
-	glm::vec3 position;
-	GLfloat angle;
+	glm::vec3 position = glm::vec3(0,0,0);
+	GLfloat angle = 0;
 	glm::mat4 viewMatrix;
 
 private:

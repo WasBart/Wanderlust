@@ -25,14 +25,24 @@ void cleanup();
 void draw();
 void update(float time_delta);
 
-std::unique_ptr<Shader> shader;
+
 std::unique_ptr<Camera> cam;
+
+std::unique_ptr<Shader> shader;
+std::unique_ptr<Shader> toonShader;
+
 std::unique_ptr<Shader> sunShader;
+
 std::unique_ptr<Model> player;
+std::unique_ptr<Model> plattform;
 std::unique_ptr<Model> sun;
+std::unique_ptr<Model> path;
+
 glm::mat4 persp;
 glm::mat4 view;
 glm::vec3 cameraPos;
+//int i = 1;
+float rad = 0.0f;
 //std::unique_ptr<Cube> cube;
 
 
@@ -123,7 +133,9 @@ int main(){
 			<< " =~" << 1.0 / time_delta << "fps" << std::endl;*/
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
+		rad += (glm::pi<float>() / 180.0f) *  20 * time_delta;
+		plattform->position = glm::vec3(sin(rad) * 10.0f, 0, 0);
+		plattform->update();
 		draw();
 		
 		glfwSwapBuffers(window);
@@ -188,53 +200,67 @@ void init(GLFWwindow* window)
 {
 
 	shader = std::make_unique<Shader>("../Shader/basic.vert",
+		"../Shader/basic.frag");
+	toonShader = std::make_unique<Shader>("../Shader/basic.vert",
 		"../Shader/toon.frag");
 	sunShader = std::make_unique<Shader>("../Shader/basic.vert",
 		"../Shader/sun.frag");
 	//cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
-	cam = std::make_unique<Camera>(0.0f, 15.0f, 30.0f);
-	player = std::make_unique<Model>("../nanosuit/nanosuit.obj");
+	cam = std::make_unique<Camera>(0.0f, 2.0f, 8.0f);
+	player = std::make_unique<Model>("../Models/player.dae");
+	plattform = std::make_unique<Model>("../Models/plattform.dae");
 	sun = std::make_unique<Model>("../Models/sun.dae");
+	path = std::make_unique<Model>("../Models/path_test.dae");
 
-	shader->useShader();
-	
+	toonShader->useShader();
 	glm::mat4 projection;
 
 	view = cam->setUp(player->position);
 
-	projection = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
+	projection = glm::perspective(glm::radians(60.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+	player->viewMatrix = view;
+	path->viewMatrix = view;
+	path->position = glm::vec3(0, -2.0f, 0);
+	path->update();
+	player->position = glm::vec3(0, 0, 0);
+	std::cout << player->angle << std::endl;
+	player->update();
+	std::cout << player->angle << std::endl;
+	plattform->position = glm::vec3(0, 3.0f, 0);
+	plattform->viewMatrix = view;
+	plattform->update();
 	
 
-	player->viewMatrix = view;
-
-	GLint modelView = glGetUniformLocation(shader->programHandle, "view");
+	GLint modelView = glGetUniformLocation(toonShader->programHandle, "view");
 	glUniformMatrix4fv(modelView, 1, GL_FALSE, glm::value_ptr(view));
 
-	GLint modelProjection = glGetUniformLocation(shader->programHandle, "projection");
+	GLint modelProjection = glGetUniformLocation(toonShader->programHandle, "projection");
 	glUniformMatrix4fv(modelProjection, 1, GL_FALSE, glm::value_ptr(projection));
 	
 	//Setting MaterialProperties
 
-	/*GLint matAmbientLoc = glGetUniformLocation(shader->programHandle, "mat.ambient");
-	GLint matDiffuseLoc = glGetUniformLocation(shader->programHandle, "mat.diffuse");
-	GLint matSpecularLoc = glGetUniformLocation(shader->programHandle, "mat.specular");
-	GLint matShineLoc = glGetUniformLocation(shader->programHandle, "mat.shininess");
+	/*GLint matAmbientPos = glGetUniformLocation(toonShader->programHandle, "mat.ambient");
+	GLint matDiffusePos = glGetUniformLocation(toonShader->programHandle, "mat.diffuse");
+	GLint matSpecularPos = glGetUniformLocation(toonShader->programHandle, "mat.specular");
+	GLint matShinePos = glGetUniformLocation(toonShader->programHandle, "mat.shininess");
 
-	glUniform3f(matAmbientLoc, 1.0f, 0.5f, 0.31f);
-	glUniform3f(matDiffuseLoc, 1.0f, 0.5f, 0.31f);
-	glUniform3f(matSpecularLoc, 0.5f, 0.5f, 0.5f);
-	glUniform1f(matShineLoc, 32.0f);
-	*/
+	glUniform3f(matAmbientPos, 1.0f, 0.5f, 0.3f);
+	glUniform3f(matDiffusePos, 1.0f, 1.0f, 1.0f);
+	glUniform3f(matSpecularPos, 1.0f, 1.0f, 1.0f);
+	glUniform1f(matShinePos, 10.0f);*/
+	
 
 	//Setting LightProperties
 
-	GLint lightAmbientPos = glGetUniformLocation(shader->programHandle, "light.ambient");
-	GLint lightDiffusePos = glGetUniformLocation(shader->programHandle, "light.diffuse");
-	GLint lightDirectionPos = glGetUniformLocation(shader->programHandle, "light.direction");
+	GLint lightAmbientPos = glGetUniformLocation(toonShader->programHandle, "light.ambient");
+	GLint lightDiffusePos = glGetUniformLocation(toonShader->programHandle, "light.diffuse");
+	//GLint lightSpecularPos = glGetUniformLocation(shader->programHandle, "light.specular");
+	GLint lightDirectionPos = glGetUniformLocation(toonShader->programHandle, "light.direction");
 
-	glUniform3f(lightDirectionPos, -1.0f, -1.0f, -1.0f);
+	glUniform3f(lightDirectionPos, -1.0f, 1.0f, -1.0f);
 	glUniform3f(lightAmbientPos, 0.2f, 0.2f, 0.2f);
 	glUniform3f(lightDiffusePos, 1.0f, 1.0f, 1.0f);
+	//glUniform3f(lightSpecularPos, 1.0f, 1.0f, 1.0f);
 	
 	sunShader->useShader();
 	
@@ -252,7 +278,7 @@ void init(GLFWwindow* window)
 	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
 	
 	
-	player->angle = glm::pi<float>();
+	//player->angle = glm::pi<float>();
 	player->update();
 
 }
@@ -267,14 +293,23 @@ void cleanup()
 }
 void draw(){
 			
-	shader->useShader();
+
+	
+
+	toonShader->useShader();
 	player->viewMatrix = view;
 	player->draw(shader.get());
+	
+	path->viewMatrix = view;
+	path->draw(shader.get());
+
+	plattform->viewMatrix = view;
+	plattform->draw(shader.get());
 
 	sunShader->useShader();
 	sun->viewMatrix = view;
 	sun->draw(sunShader.get());
-	
+
 }
 
 void update(float time_delta)
