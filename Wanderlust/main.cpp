@@ -150,11 +150,27 @@ int main(){
 		int pathWidth = abs(path->minVector.x) + abs(path->maxVector.x);
 		int pathBreadth = abs(path->minVector.z) + abs(path->maxVector.z);
 
+		int msgboxID;
+
 		if ((player->position.z - playerBreadth/2.0f <= path->position.z) &&
 			player->position.z + playerBreadth/2.0f >= path->position.z - pathBreadth){
 			
 			if (player->position.x + playerWidth/2.0f  < path->position.x - pathWidth / 2.0f ||
 				player->position.x - playerWidth/2.0f > path->position.x + pathWidth / 2.0f){
+				msgboxID = MessageBox(
+					NULL,
+					L"You lost.\nTry again?",
+					L"Don't give up!",
+					MB_ICONINFORMATION | MB_YESNO
+					);
+
+				if (msgboxID == IDYES)
+				{
+					init(window);
+				}
+				else{
+					glfwSetWindowShouldClose(window, true);
+				}
 				std::cout << "You Lose" << std::endl;
 			}
 		}
@@ -163,12 +179,41 @@ int main(){
 	
 			if (player->position.x + playerWidth / 2.0f< path2->position.x - pathWidth / 8.0f ||
 				player->position.x - playerWidth / 2.0f> path2->position.x + pathWidth / 8.0f){
+				msgboxID = MessageBox(
+					NULL,
+					L"You lost.\nTry again?",
+					L"Don't give up!",
+					MB_ICONINFORMATION | MB_YESNO
+					);
+
+				if (msgboxID == IDYES)
+				{
+					init(window);
+				}
+				else{
+					glfwSetWindowShouldClose(window, true);
+				}
 				std::cout << "You Lose" << std::endl;
 			}
 
 		}
 		else if ((player->position.z - playerBreadth / 2.0f <= path3->position.z) &&
 			player->position.z + playerBreadth / 2.0f >= path3->position.z - pathBreadth / 5.0f){
+			msgboxID = MessageBox(
+				NULL,
+				L"You won!\nHow 'bout another round?",
+				L"Congratulations!",
+				MB_ICONINFORMATION | MB_YESNO
+				);
+			
+			if (msgboxID == IDYES)
+			{
+				init(window);
+			}
+			else{
+				glfwSetWindowShouldClose(window, true);
+			}
+
 			std::cout << " You win" << std::endl;
 		}
 		draw();
@@ -197,18 +242,20 @@ int main(){
 
 		if (glfwGetKey(window, GLFW_KEY_A)){
 			player->position.x -= 10 * time_delta;
+			player->center.x -= 10 * time_delta;
 			player->update();
 
-			view = cam->update(glm::vec3(cam-> eyeX -= 10 * time_delta, cam->eyeY, cam ->eyeZ), player->position);
+			view = cam->update(glm::vec3(cam-> eyeX -= 10 * time_delta, cam->eyeY, cam ->eyeZ), player->center);
 			GLint model_view = glGetUniformLocation(shader->programHandle, "view");
 			glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
 		}
 		else if (glfwGetKey(window, GLFW_KEY_D))
 		{
 			player->position.x += 10* time_delta;
+			player->center.x += 10 * time_delta;
 			player->update();
 
-			view = cam->update(glm::vec3(cam->eyeX += 10 * time_delta, cam->eyeY, cam->eyeZ), player->position);
+			view = cam->update(glm::vec3(cam->eyeX += 10 * time_delta, cam->eyeY, cam->eyeZ), player->center);
 			GLint model_view = glGetUniformLocation(shader->programHandle, "view");
 			glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
 		}
@@ -216,18 +263,20 @@ int main(){
 		if (glfwGetKey(window, GLFW_KEY_W))
 		{
 			player->position.z -= 10 * time_delta;
+			player->center.z -= 10 * time_delta;
 			player->update();
 
-			view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ -= 10 * time_delta), player->position);
+			view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ -= 10 * time_delta), player->center);
 			GLint model_view = glGetUniformLocation(shader->programHandle, "view");
 			glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
 		}
 		else if (glfwGetKey(window, GLFW_KEY_S))
 		{
 			player->position.z += 10 * time_delta;
+			player->center.z += 10 * time_delta;
 			player->update();
 
-			view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ += 10 * time_delta), player->position);
+			view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ += 10 * time_delta), player->center);
 			GLint model_view = glGetUniformLocation(shader->programHandle, "view");
 			glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
 		}
@@ -261,7 +310,7 @@ void init(GLFWwindow* window)
 	
 	glm::mat4 projection;
 
-	view = cam->setUp(player->position);
+	view = cam->setUp(player->center);
 
 	projection = glm::perspective(glm::radians(60.0f), 800.0f / 600.0f, 0.1f, 100.0f);
 	player->viewMatrix = view;
@@ -423,8 +472,9 @@ void mouseMovementPoll(GLFWwindow* window, double xpos, double ypos)
 	lastY = ypos;
 
 	GLfloat sensitivity = 0.05;
+	GLfloat ySensitivity = 0.005;
 	xoffset *= sensitivity;
-	yoffset *= sensitivity;
+	yoffset *= ySensitivity;
 
 	yaw += xoffset;
 	pitch += yoffset;
@@ -441,15 +491,15 @@ void mouseMovementPoll(GLFWwindow* window, double xpos, double ypos)
 
 	auto t1 = glm::rotate(glm::mat4(), glm::radians(yaw), glm::vec3(0, 1, 0));
 	auto t2 = glm::rotate(glm::mat4(), glm::radians(pitch), glm::vec3(1, 0, 0));
-	auto t3 = glm::translate(glm::mat4(), player->position);
+	auto t3 = glm::translate(glm::mat4(), player->center);
 	auto t4 = t3 * t2 * t1;
 
 	camUp = t2 * t1 * glm::vec4(0, 1, 0, 1);
-	glm::vec4 eye = t4 * glm::vec4(0.0f, 0.0f, 8.0f, 1.0f);
+	glm::vec4 eye = t4 * glm::vec4(0.0f, 4.0f, 8.0f, 1.0f);
 	cam->eyeX = eye.x;
 	cam->eyeY = eye.y;
 	cam->eyeZ = eye.z;
-	view = cam->useUp(eye.xyz(), player->position, camUp.xyz());
+	view = cam->useUp(eye.xyz(), player->center, camUp.xyz());
 	GLint model_view = glGetUniformLocation(shader->programHandle, "view");
 	glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
 }
