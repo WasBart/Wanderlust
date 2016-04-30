@@ -28,6 +28,7 @@ void Model::update(){
 	glm::mat4 model;
 	model = glm::translate(model, position);
 	model = glm::rotate(model,angle,glm::vec3(0,1,0));
+	model = glm::scale(model, scale);
 	for (GLuint i = 0; i < this->meshes.size(); i++){
 		this->meshes[i].update(model);
 	}
@@ -89,6 +90,8 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 			maxVector.x = vector.x;
 			maxVector.y = vector.y;
 			maxVector.z = vector.z;
+
+			firstRound = false;
 		}
 		else
 		{
@@ -121,6 +124,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 			{
 				maxVector.z = vector.z;
 			}
+
 		}
 
 		vertex.Position = vector;
@@ -138,7 +142,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 			vertex.TexCoords = vec;
 		}
 		else
-		vertex.TexCoords = glm::vec2(0.0f, 0.0f);
+			vertex.TexCoords = glm::vec2(0.0f, 0.0f);
 
 		vertices.push_back(vertex);
 	}
@@ -182,7 +186,7 @@ GLuint Model::loadTexture(std::string filePath)
 {
 	GLuint textureHandle = 0;
 	filePath.insert(0, std::string("../Textures/"));
-	std::cout << filePath << std::endl;
+	//std::cout << filePath << std::endl;
 	auto bitMap = FreeImage_Load(FIF_PNG, filePath.c_str());
 
 	if (bitMap == nullptr)

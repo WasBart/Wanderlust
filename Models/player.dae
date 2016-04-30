@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
-  <asset><contributor><author></author><authoring_tool>FBX COLLADA exporter</authoring_tool><comments></comments></contributor><created>2016-04-30T16:35:51Z</created><keywords></keywords><modified>2016-04-30T16:35:51Z</modified><revision></revision><subject></subject><title></title><unit meter="0.010000" name="centimeter"></unit><up_axis>Y_UP</up_axis></asset>
+  <asset><contributor><author></author><authoring_tool>FBX COLLADA exporter</authoring_tool><comments></comments></contributor><created>2016-04-30T18:15:47Z</created><keywords></keywords><modified>2016-04-30T18:15:47Z</modified><revision></revision><subject></subject><title></title><unit meter="0.010000" name="centimeter"></unit><up_axis>Y_UP</up_axis></asset>
   <library_images>
     <image id="file1-image" name="file1"><init_from>player_cube.png</init_from></image>
   </library_images>
@@ -55,14 +55,14 @@
       <mesh>
         <source id="pCube1-POSITION">
           <float_array id="pCube1-POSITION-array" count="24">
--0.500000 0.074843 0.500000
-0.500000 0.074843 0.500000
--0.500000 1.925157 0.500000
-0.500000 1.925157 0.500000
 -0.500000 1.925157 -0.500000
 0.500000 1.925157 -0.500000
 -0.500000 0.074843 -0.500000
 0.500000 0.074843 -0.500000
+-0.500000 0.074843 0.500000
+0.500000 0.074843 0.500000
+-0.500000 1.925157 0.500000
+0.500000 1.925157 0.500000
 </float_array>
           <technique_common>
             <accessor source="#pCube1-POSITION-array" count="8" stride="3">
@@ -74,18 +74,6 @@
         </source>
         <source id="pCube1-Normal0">
           <float_array id="pCube1-Normal0-array" count="108">
-0.000000 0.000000 1.000000
-0.000000 0.000000 1.000000
-0.000000 0.000000 1.000000
-0.000000 0.000000 1.000000
-0.000000 0.000000 1.000000
-0.000000 0.000000 1.000000
-0.000000 1.000000 0.000000
-0.000000 1.000000 0.000000
-0.000000 1.000000 0.000000
-0.000000 1.000000 0.000000
-0.000000 1.000000 0.000000
-0.000000 1.000000 0.000000
 0.000000 0.000000 -1.000000
 0.000000 0.000000 -1.000000
 0.000000 0.000000 -1.000000
@@ -98,6 +86,18 @@
 0.000000 -1.000000 0.000000
 0.000000 -1.000000 0.000000
 0.000000 -1.000000 0.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 0.000000 1.000000
+0.000000 1.000000 0.000000
+0.000000 1.000000 0.000000
+0.000000 1.000000 0.000000
+0.000000 1.000000 0.000000
+0.000000 1.000000 0.000000
+0.000000 1.000000 0.000000
 1.000000 0.000000 0.000000
 1.000000 0.000000 0.000000
 1.000000 0.000000 0.000000
@@ -146,7 +146,7 @@
         <vertices id="pCube1-VERTEX">
           <input semantic="POSITION" source="#pCube1-POSITION"/>
         </vertices>
-        <triangles count="12" material="lambert2"><input semantic="VERTEX" offset="0" source="#pCube1-VERTEX"/><input semantic="NORMAL" offset="1" source="#pCube1-Normal0"/><input semantic="TEXCOORD" offset="2" set="0" source="#pCube1-UV0"/><p> 2 0 6 0 1 5 3 2 3 3 3 3 0 4 5 1 5 0 3 6 8 5 7 9 2 8 6 2 9 6 5 10 9 4 11 7 6 12 4 4 13 7 7 14 13 7 15 13 4 16 7 5 17 12 1 18 11 0 19 5 6 20 4 1 21 11 6 22 4 7 23 10 7 24 1 5 25 2 1 26 0 3 27 3 1 28 0 5 29 2 2 30 6 6 31 4 0 32 5 6 33 4 2 34 6 4 35 7</p></triangles>
+        <triangles count="12" material="lambert2"><input semantic="VERTEX" offset="0" source="#pCube1-VERTEX"/><input semantic="NORMAL" offset="1" source="#pCube1-Normal0"/><input semantic="TEXCOORD" offset="2" set="0" source="#pCube1-UV0"/><p> 2 0 6 0 1 5 3 2 3 3 3 3 0 4 5 1 5 0 5 6 9 4 7 7 2 8 6 5 9 9 2 10 6 3 11 8 6 12 4 4 13 7 7 14 13 7 15 13 4 16 7 5 17 12 7 18 10 1 19 11 6 20 4 6 21 4 1 22 11 0 23 5 5 24 2 1 25 0 7 26 1 1 27 0 5 28 2 3 29 3 0 30 5 2 31 6 6 32 4 4 33 7 6 34 4 2 35 6</p></triangles>
       </mesh>
     </geometry>
   </library_geometries>

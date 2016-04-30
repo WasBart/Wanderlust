@@ -17,9 +17,12 @@ public:
 	GLuint Model::loadTexture(std::string filePath);
 	void update();
 	glm::vec3 position = glm::vec3(0,0,0);
+	glm::vec3 scale = glm::vec3(1, 1, 1);
 	GLfloat angle = 0;
 	glm::mat4 viewMatrix;
 	glm::vec3 center;
+	glm::vec3 minVector;
+	glm::vec3 maxVector;
 
 private:
 	
@@ -30,8 +33,7 @@ private:
 	void processNode(aiNode* node, const aiScene* scene);
 	Mesh processMesh(aiMesh* mesh, const aiScene* scene);
 
-	glm::vec3 minVector;
-	glm::vec3 maxVector;
+	
 	
 	//For Textures;
 	std::vector<GLuint> loadMaterialTextures(aiMaterial* mat);
