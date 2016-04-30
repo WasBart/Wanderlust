@@ -195,19 +195,19 @@ void init(GLFWwindow* window)
 
 	player->viewMatrix = view;
 
-	GLint model_view = glGetUniformLocation(shader->programHandle, "view");
-	glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
+	GLint modelView = glGetUniformLocation(shader->programHandle, "view");
+	glUniformMatrix4fv(modelView, 1, GL_FALSE, glm::value_ptr(view));
 
-	GLint model_projection = glGetUniformLocation(shader->programHandle, "projection");
-	glUniformMatrix4fv(model_projection, 1, GL_FALSE, glm::value_ptr(projection));
+	GLint modelProjection = glGetUniformLocation(shader->programHandle, "projection");
+	glUniformMatrix4fv(modelProjection, 1, GL_FALSE, glm::value_ptr(projection));
 
-	GLint lightAmbientLoc = glGetUniformLocation(shader->programHandle, "light.ambient");
-	GLint lightDiffuseLoc = glGetUniformLocation(shader->programHandle, "light.diffuse");
-	GLint lightDirectionLoc = glGetUniformLocation(shader->programHandle, "light.direction");
+	GLint lightAmbientPos = glGetUniformLocation(shader->programHandle, "light.ambient");
+	GLint lightDiffusePos = glGetUniformLocation(shader->programHandle, "light.diffuse");
+	GLint lightDirectionPos = glGetUniformLocation(shader->programHandle, "light.direction");
 
-	glUniform3f(lightDirectionLoc, -1.0f, -1.0f, -1.0f);
-	glUniform3f(lightAmbientLoc, 0.2f, 0.2f, 0.2f);
-	glUniform3f(lightDiffuseLoc, 1.0f, 1.0f, 1.0f);
+	glUniform3f(lightDirectionPos, -1.0f, -1.0f, -1.0f);
+	glUniform3f(lightAmbientPos, 0.2f, 0.2f, 0.2f);
+	glUniform3f(lightDiffusePos, 1.0f, 1.0f, 1.0f);
 	
 	sunShader->useShader();
 	
