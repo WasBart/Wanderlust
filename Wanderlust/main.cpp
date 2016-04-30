@@ -187,9 +187,9 @@ int main(){
 void init(GLFWwindow* window)
 {
 
-	shader = std::make_unique<Shader>("../Shader/toon.vert",
+	shader = std::make_unique<Shader>("../Shader/basic.vert",
 		"../Shader/toon.frag");
-	sunShader = std::make_unique<Shader>("../Shader/sun.vert",
+	sunShader = std::make_unique<Shader>("../Shader/basic.vert",
 		"../Shader/sun.frag");
 	//cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
 	cam = std::make_unique<Camera>(0.0f, 15.0f, 30.0f);
@@ -212,6 +212,21 @@ void init(GLFWwindow* window)
 
 	GLint modelProjection = glGetUniformLocation(shader->programHandle, "projection");
 	glUniformMatrix4fv(modelProjection, 1, GL_FALSE, glm::value_ptr(projection));
+	
+	//Setting MaterialProperties
+
+	/*GLint matAmbientLoc = glGetUniformLocation(shader->programHandle, "mat.ambient");
+	GLint matDiffuseLoc = glGetUniformLocation(shader->programHandle, "mat.diffuse");
+	GLint matSpecularLoc = glGetUniformLocation(shader->programHandle, "mat.specular");
+	GLint matShineLoc = glGetUniformLocation(shader->programHandle, "mat.shininess");
+
+	glUniform3f(matAmbientLoc, 1.0f, 0.5f, 0.31f);
+	glUniform3f(matDiffuseLoc, 1.0f, 0.5f, 0.31f);
+	glUniform3f(matSpecularLoc, 0.5f, 0.5f, 0.5f);
+	glUniform1f(matShineLoc, 32.0f);
+	*/
+
+	//Setting LightProperties
 
 	GLint lightAmbientPos = glGetUniformLocation(shader->programHandle, "light.ambient");
 	GLint lightDiffusePos = glGetUniformLocation(shader->programHandle, "light.diffuse");
