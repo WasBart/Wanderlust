@@ -3,6 +3,7 @@
 #include <glew\glew.h>
 #include <GLFW\glfw3.h>
 
+#define GLM_SWIZZLE
 #include <glm\glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -24,6 +25,7 @@ void init(GLFWwindow* window);
 void cleanup();
 void draw();
 void update(float time_delta);
+void mouseMovementPoll(GLFWwindow* window, double xpos, double ypos);
 
 std::unique_ptr<Shader> shader;
 std::unique_ptr<Camera> cam;
@@ -35,6 +37,10 @@ glm::mat4 view;
 glm::vec3 cameraPos;
 //std::unique_ptr<Cube> cube;
 
+GLfloat lastX = 400, lastY = 300;
+GLfloat yaw = 0.0f;
+GLfloat pitch = 0.0f;
+glm::vec4 camUp = glm::vec4(0.0f,1.0f,0.0f,1.0f);
 
 int main(){
 
@@ -128,6 +134,15 @@ int main(){
 		
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+
+		double xpos;
+		double ypos;
+		glfwGetCursorPos(window, &xpos, &ypos);
+
+		if (xpos != lastX || ypos != lastY)
+		{
+			mouseMovementPoll(window, xpos, ypos);
+		}
 
 		if (glfwGetKey(window, GLFW_KEY_ESCAPE))
 		{
@@ -255,6 +270,8 @@ void init(GLFWwindow* window)
 	player->angle = glm::pi<float>();
 	player->update();
 
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 }
 void cleanup()
 {
@@ -282,7 +299,53 @@ void update(float time_delta)
 	player->update();
 }
 
+bool firstMouse = true;
+void mouseMovementPoll(GLFWwindow* window, double xpos, double ypos)
+{
+	
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
 
+	GLfloat xoffset = xpos - lastX;
+	GLfloat yoffset = lastY - ypos;
+	lastX = xpos;
+	lastY = ypos;
+
+	GLfloat sensitivity = 0.05;
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
+
+	yaw += xoffset;
+	pitch += yoffset;
+
+	if (pitch > 29.0f)
+		pitch = 29.0f;
+	if (pitch < -29.0f)
+		pitch = -29.0f;
+
+	glm::vec3 front;
+	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	front.y = sin(glm::radians(pitch));
+	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+
+	auto t1 = glm::rotate(glm::mat4(), glm::radians(yaw), glm::vec3(0, 1, 0));
+	auto t2 = glm::rotate(glm::mat4(), glm::radians(pitch), glm::vec3(1, 0, 0));
+	auto t3 = glm::translate(glm::mat4(), player->position);
+	auto t4 = t3 * t2 * t1;
+
+	camUp = t2 * t1 * glm::vec4(0, 1, 0, 1);
+	glm::vec4 eye = t4 * glm::vec4(0.0f, 0.0f, 30.0f, 1.0f);
+	cam->eyeX = eye.x;
+	cam->eyeY = eye.y;
+	cam->eyeZ = eye.z;
+	view = cam->useUp(eye.xyz(), player->position, camUp.xyz());
+	GLint model_view = glGetUniformLocation(shader->programHandle, "view");
+	glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
+}
 
 static void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const GLvoid* userParam) {
 	switch (id) {

@@ -19,6 +19,7 @@ public:
 	glm::vec3 position;
 	GLfloat angle;
 	glm::mat4 viewMatrix;
+	glm::vec3 center;
 
 private:
 	
@@ -28,6 +29,9 @@ private:
 	void loadModel(std::string path);
 	void processNode(aiNode* node, const aiScene* scene);
 	Mesh processMesh(aiMesh* mesh, const aiScene* scene);
+
+	glm::vec3 minVector;
+	glm::vec3 maxVector;
 	
 	//For Textures;
 	std::vector<GLuint> loadMaterialTextures(aiMaterial* mat);

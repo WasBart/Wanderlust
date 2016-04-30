@@ -14,6 +14,7 @@ Model::Model(std::string path)
 Drawing all Meshes from this Model
 */
 void Model::draw(cgue::Shader* shader){
+	update();
 	for (GLuint i = 0; i < this->meshes.size(); i++){
 		this->meshes[i].viewMatrix = viewMatrix;
 		this->meshes[i].draw(shader);
@@ -55,6 +56,7 @@ void Model::processNode(aiNode* node, const aiScene* scene)
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 		this->meshes.push_back(this->processMesh(mesh, scene));
 	}
+	this->center = (minVector + maxVector) / 2.0f;
 
 	for (GLuint i = 0; i < node->mNumChildren; i++)
 	{
@@ -68,6 +70,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 	std::vector<GLuint> indices;
 	std::vector<GLuint> textures;
 
+	bool firstRound = true;
 	for (GLuint i = 0; i < mesh->mNumVertices; i++)
 	{
 		Vertex vertex;
@@ -76,6 +79,50 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 		vector.x = mesh->mVertices[i].x;
 		vector.y = mesh->mVertices[i].y;
 		vector.z = mesh->mVertices[i].z;
+
+		if (firstRound)
+		{
+			minVector.x = vector.x;
+			minVector.y = vector.y;
+			minVector.z = vector.z;
+
+			maxVector.x = vector.x;
+			maxVector.y = vector.y;
+			maxVector.z = vector.z;
+		}
+		else
+		{
+			if (vector.x < minVector.x)
+			{
+				minVector.x = vector.x;
+			}
+
+			if (vector.y < minVector.y)
+			{
+				minVector.y = vector.y;
+			}
+
+			if (vector.z < minVector.z)
+			{
+				minVector.z = vector.z;
+			}
+
+			if (vector.x > maxVector.x)
+			{
+				maxVector.x = vector.x;
+			}
+
+			if (vector.y > maxVector.y)
+			{
+				maxVector.y = vector.y;
+			}
+
+			if (vector.z > maxVector.z)
+			{
+				maxVector.z = vector.z;
+			}
+		}
+
 		vertex.Position = vector;
 		//Normals
 		vector.x = mesh->mNormals[i].x;
