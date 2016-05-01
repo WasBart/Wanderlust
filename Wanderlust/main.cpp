@@ -299,7 +299,7 @@ void init(GLFWwindow* window)
 	sunShader = std::make_unique<Shader>("../Shader/basic.vert",
 		"../Shader/sun.frag");
 	//cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
-	cam = std::make_unique<Camera>(0.0f, 0.0f, 8.0f);
+	cam = std::make_unique<Camera>(0.0f, 5.0f, 8.0f);
 	player = std::make_unique<Model>("../Models/player.dae");
 	plattform = std::make_unique<Model>("../Models/plattform.dae");
 	sun = std::make_unique<Model>("../Models/sun.dae");
@@ -309,7 +309,8 @@ void init(GLFWwindow* window)
 
 	
 	glm::mat4 projection;
-
+	player->position = glm::vec3(0, 0, 0);
+	player->update();
 	view = cam->setUp(player->center);
 
 	projection = glm::perspective(glm::radians(60.0f), 800.0f / 600.0f, 0.1f, 100.0f);
