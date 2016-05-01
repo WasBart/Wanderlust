@@ -5,8 +5,8 @@
       <author>Blender User</author>
       <authoring_tool>Blender 2.77.0 commit date:2016-04-05, commit time:18:12, hash:abf6f08</authoring_tool>
     </contributor>
-    <created>2016-04-27T16:20:48</created>
-    <modified>2016-04-27T16:20:48</modified>
+    <created>2016-05-01T13:35:45</created>
+    <modified>2016-05-01T13:35:45</modified>
     <unit name="meter" meter="1"/>
     <up_axis>Z_UP</up_axis>
   </asset>
@@ -101,24 +101,10 @@
       </extra>
     </light>
   </library_lights>
-  <library_images>
-    <image id="BlueMarble_png" name="BlueMarble_png">
-      <init_from>BlueMarble.png</init_from>
-    </image>
-  </library_images>
+  <library_images/>
   <library_effects>
     <effect id="Material_001-effect">
       <profile_COMMON>
-        <newparam sid="BlueMarble_png-surface">
-          <surface type="2D">
-            <init_from>BlueMarble_png</init_from>
-          </surface>
-        </newparam>
-        <newparam sid="BlueMarble_png-sampler">
-          <sampler2D>
-            <source>BlueMarble_png-surface</source>
-          </sampler2D>
-        </newparam>
         <technique sid="common">
           <phong>
             <emission>
@@ -128,7 +114,7 @@
               <color sid="ambient">0 0 0 1</color>
             </ambient>
             <diffuse>
-              <texture texture="BlueMarble_png-sampler" texcoord="UVMap"/>
+              <color sid="diffuse">0.64 0.64 0.64 1</color>
             </diffuse>
             <specular>
               <color sid="specular">0.5 0.5 0.5 1</color>
@@ -210,9 +196,7 @@
         <instance_geometry url="#Sphere-mesh" name="Sphere">
           <bind_material>
             <technique_common>
-              <instance_material symbol="Material_001-material" target="#Material_001-material">
-                <bind_vertex_input semantic="UVMap" input_semantic="TEXCOORD" input_set="0"/>
-              </instance_material>
+              <instance_material symbol="Material_001-material" target="#Material_001-material"/>
             </technique_common>
           </bind_material>
         </instance_geometry>

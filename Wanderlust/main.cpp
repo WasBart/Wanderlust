@@ -33,11 +33,10 @@ std::unique_ptr<Camera> cam;
 std::unique_ptr<Shader> shader;
 std::unique_ptr<Shader> toonShader;
 
-std::unique_ptr<Shader> sunShader;
 
 std::unique_ptr<Model> player;
 std::unique_ptr<Model> plattform;
-std::unique_ptr<Model> sun;
+std::unique_ptr<Model> sphere;
 std::unique_ptr<Model> path;
 std::unique_ptr<Model> path2;
 std::unique_ptr<Model> path3;
@@ -327,13 +326,12 @@ void init(GLFWwindow* window)
 		"../Shader/basic.frag");
 	toonShader = std::make_unique<Shader>("../Shader/basic.vert",
 		"../Shader/toon.frag");
-	sunShader = std::make_unique<Shader>("../Shader/basic.vert",
-		"../Shader/sun.frag");
+
 	//cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
 	cam = std::make_unique<Camera>(0.0f, 5.0f, 8.0f);
 	player = std::make_unique<Model>("../Models/player.dae");
 	plattform = std::make_unique<Model>("../Models/plattform.dae");
-	sun = std::make_unique<Model>("../Models/sun.dae");
+	sphere = std::make_unique<Model>("../Models/sphere.dae");
 	path = std::make_unique<Model>("../Models/path.dae");
 	path2 = std::make_unique<Model>("../Models/path.dae");
 	path3 = std::make_unique<Model>("../Models/path.dae");
@@ -374,12 +372,13 @@ void init(GLFWwindow* window)
 	GLint modelProjection = glGetUniformLocation(toonShader->programHandle, "projection");
 	glUniformMatrix4fv(modelProjection, 1, GL_FALSE, glm::value_ptr(projection));
 		
-
+	GLint objectColorPos = glGetUniformLocation(toonShader->programHandle, "objectDiffuse");
+	glUniform3f(objectColorPos, 0.27f, 0.51f, 0.71f);
 	//Setting LightProperties
 
 	GLint lightAmbientPos = glGetUniformLocation(toonShader->programHandle, "light.ambient");
 	GLint lightDiffusePos = glGetUniformLocation(toonShader->programHandle, "light.diffuse");
-	//GLint lightSpecularPos = glGetUniformLocation(shader->programHandle, "light.specular");
+	
 	GLint lightDirectionPos = glGetUniformLocation(toonShader->programHandle, "light.direction");
 
 	glUniform3f(lightDirectionPos, -1.0f, -1.0f, -1.0f);
@@ -387,6 +386,10 @@ void init(GLFWwindow* window)
 	glUniform3f(lightDiffusePos, 1.0f, 1.0f, 1.0f);
 	//glUniform3f(lightSpecularPos, 1.0f, 1.0f, 1.0f);
 	
+	glm::vec3 spherePos(-5.0f, 5.0f, -10.0f);
+	sphere->position = spherePos;
+	sphere->viewMatrix = view;
+	sphere->update();
 
 	//Basic Shader
 	shader->useShader();
@@ -422,24 +425,6 @@ void init(GLFWwindow* window)
 	glUniform3f(lightDiffusePos, 1.0f, 1.0f, 1.0f);
 	glUniform3f(lightSpecularPos, 1.0f, 1.0f, 1.0f);
 
-	
-	sunShader->useShader();
-	
-	glm::vec3 lightPos(1.0f, 18.0f, -3.0f);
-	sun->position = lightPos;
-	sun->viewMatrix = view;
-	sun->update();
-
-	modelView = glGetUniformLocation(sunShader->programHandle, "view");
-	modelProjection = glGetUniformLocation(sunShader->programHandle, "projection");
-	
-	// Set matrices
-	glUniformMatrix4fv(modelView, 1, GL_FALSE, glm::value_ptr(view));
-	glUniformMatrix4fv(modelProjection, 1, GL_FALSE, glm::value_ptr(projection));
-	
-	
-	//player->angle = glm::pi<float>();
-	player->update();
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -450,7 +435,7 @@ void cleanup()
 	player.reset(nullptr);
 	shader.reset(nullptr);
 	cam.reset(nullptr);
-	sun.reset(nullptr);
+	sphere.reset(nullptr);
 	
 }
 void draw(){
@@ -462,6 +447,8 @@ void draw(){
 	player->viewMatrix = view;
 	player->draw(shader.get());
 	
+	sphere->viewMatrix = view;
+	sphere->draw(toonShader.get());
 
 	shader->useShader();
 	path->viewMatrix = view;
@@ -476,9 +463,7 @@ void draw(){
 	plattform->viewMatrix = view;
 	plattform->draw(shader.get());
 
-	sunShader->useShader();
-	sun->viewMatrix = view;
-	sun->draw(sunShader.get());
+	
 
 }
 
