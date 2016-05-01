@@ -45,26 +45,44 @@ std::unique_ptr<Model> path3;
 glm::mat4 persp;
 glm::mat4 view;
 glm::vec3 cameraPos;
-//int i = 1;
+float width;
+float height;
 float rad = 0.0f;
-//std::unique_ptr<Cube> cube;
+
 
 GLfloat lastX = 400, lastY = 300;
 GLfloat yaw = 0.0f;
 GLfloat pitch = 0.0f;
 glm::vec4 camUp = glm::vec4(0.0f,1.0f,0.0f,1.0f);
 
-int main(){
+int main(int argc, char** argv){
 
+	width = 800;
+	height = 600;
+	
+	if (argc >= 3) {
+	
+		if ((std::stringstream(argv[1]) >> width).fail())
+		{
+			std::cerr << "ERROR: Could not parse first Element,try again" << std::endl;
+			system("PAUSE");
+			exit(EXIT_FAILURE);
+
+		}
+		if ((std::stringstream(argv[2]) >> width).fail())
+		{
+			std::cerr << "ERROR: Could not parse first Element,try again" << std::endl;
+			system("PAUSE");
+			exit(EXIT_FAILURE);
+
+		}
+	}
 	if (!glfwInit())
 	{
 		std::cerr << "Could not init glfw!" << std::endl;
 		system("Pause");
 		exit(EXIT_FAILURE);
 	}
-
-	const int width = 800;
-	const int height = 600;
 	
 
 #if _DEBUG
@@ -310,7 +328,7 @@ void init(GLFWwindow* window)
 	player->update();
 	view = cam->setUp(player->center);
 
-	projection = glm::perspective(glm::radians(60.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+	projection = glm::perspective(glm::radians(60.0f), width / height, 0.1f, 100.0f);
 	player->viewMatrix = view;
 	path->viewMatrix = view;
 	path->position = glm::vec3(0, -1.0f, 1.0f);
