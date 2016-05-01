@@ -230,6 +230,22 @@ int main(int argc, char** argv){
 				glfwSetWindowShouldClose(window, true);
 			}
 		}
+		else{
+			msgboxID = MessageBox(
+				NULL,
+				L"You lost.\nTry again?",
+				L"Don't give up!",
+				MB_ICONINFORMATION | MB_YESNO
+				);
+
+			if (msgboxID == IDYES)
+			{
+				init(window);
+			}
+			else{
+				glfwSetWindowShouldClose(window, true);
+			}
+		}
 
 		draw();
 
