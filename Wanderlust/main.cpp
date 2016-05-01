@@ -59,8 +59,10 @@ int main(int argc, char** argv){
 
 	width = 800;
 	height = 600;
+	bool fullScreen = false;
+	float refreshRate = 60;
 	
-	if (argc >= 3) {
+	if (argc >= 5) {
 	
 		if ((std::stringstream(argv[1]) >> width).fail())
 		{
@@ -69,9 +71,35 @@ int main(int argc, char** argv){
 			exit(EXIT_FAILURE);
 
 		}
-		if ((std::stringstream(argv[2]) >> width).fail())
+		lastX = width / 2.0f;
+
+		if ((std::stringstream(argv[2]) >> height).fail())
 		{
-			std::cerr << "ERROR: Could not parse first Element,try again" << std::endl;
+			std::cerr << "ERROR: Could not parse second Element,try again" << std::endl;
+			system("PAUSE");
+			exit(EXIT_FAILURE);
+
+		}
+		lastY = height / 2.0f;
+
+		std::string full;
+
+		if ((std::stringstream(argv[3]) >> full).fail())
+		{
+			std::cerr << "ERROR: Could not parse third Element,try again" << std::endl;
+			system("PAUSE");
+			exit(EXIT_FAILURE);
+
+		}
+
+		if (full.compare("full") == 0)
+		{
+			fullScreen = true;
+		}
+
+		if ((std::stringstream(argv[4]) >> refreshRate).fail())
+		{
+			std::cerr << "ERROR: Could not parse fourth Element,try again" << std::endl;
 			system("PAUSE");
 			exit(EXIT_FAILURE);
 
@@ -91,8 +119,16 @@ int main(int argc, char** argv){
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	GLFWwindow* window;
 
-	auto window = glfwCreateWindow(width, height, "CGUE", nullptr, nullptr);
+	if (fullScreen)
+	{
+		window = glfwCreateWindow(width, height, "CGUE", glfwGetPrimaryMonitor(), nullptr);
+	}
+	else
+	{
+		window = glfwCreateWindow(width, height, "CGUE", nullptr, nullptr);
+	}
 
 	if (!window)
 	{
@@ -101,6 +137,8 @@ int main(int argc, char** argv){
 		system("Pause");
 		exit(EXIT_FAILURE);
 	}
+
+	glfwWindowHint(GLFW_REFRESH_RATE, refreshRate);
 
 	glfwMakeContextCurrent(window);
 
