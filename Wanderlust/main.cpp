@@ -141,7 +141,7 @@ int main(){
 			<< " =~" << 1.0 / time_delta << "fps" << std::endl;*/
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		rad += (glm::pi<float>() / 180.0f) *  20 * time_delta;
+		rad += (glm::pi<float>() / 180.0f) * 20 * time_delta;
 		plattform->position = glm::vec3(5, 0, sin(rad) * 10.0f);
 		plattform->update();
 
@@ -152,11 +152,11 @@ int main(){
 
 		int msgboxID;
 
-		if ((player->position.z - playerBreadth/2.0f <= path->position.z) &&
-			player->position.z + playerBreadth/2.0f >= path->position.z - pathBreadth){
-			
-			if (player->position.x + playerWidth/2.0f  < path->position.x - pathWidth / 2.0f ||
-				player->position.x - playerWidth/2.0f > path->position.x + pathWidth / 2.0f){
+		if ((player->position.z - playerBreadth / 2.0f <= path->position.z) &&
+			player->position.z + playerBreadth / 2.0f >= path->position.z - pathBreadth){
+
+			if (player->position.x + playerWidth / 2.0f  < path->position.x - pathWidth / 2.0f ||
+				player->position.x - playerWidth / 2.0f > path->position.x + pathWidth / 2.0f){
 				msgboxID = MessageBox(
 					NULL,
 					L"You lost.\nTry again?",
@@ -171,12 +171,11 @@ int main(){
 				else{
 					glfwSetWindowShouldClose(window, true);
 				}
-				std::cout << "You Lose" << std::endl;
 			}
 		}
-		else if ((player->position.z - playerBreadth/2.0f <= path2->position.z) &&
-			player->position.z + playerBreadth/2.0f >= path2->position.z-pathBreadth){
-	
+		else if ((player->position.z - playerBreadth / 2.0f <= path2->position.z) &&
+			player->position.z + playerBreadth / 2.0f >= path2->position.z - pathBreadth){
+
 			if (player->position.x + playerWidth / 2.0f< path2->position.x - pathWidth / 8.0f ||
 				player->position.x - playerWidth / 2.0f> path2->position.x + pathWidth / 8.0f){
 				msgboxID = MessageBox(
@@ -193,7 +192,6 @@ int main(){
 				else{
 					glfwSetWindowShouldClose(window, true);
 				}
-				std::cout << "You Lose" << std::endl;
 			}
 
 		}
@@ -205,7 +203,7 @@ int main(){
 				L"Congratulations!",
 				MB_ICONINFORMATION | MB_YESNO
 				);
-			
+
 			if (msgboxID == IDYES)
 			{
 				init(window);
@@ -213,18 +211,17 @@ int main(){
 			else{
 				glfwSetWindowShouldClose(window, true);
 			}
-
-			std::cout << " You win" << std::endl;
 		}
+
 		draw();
-		
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
-
+		
 		double xpos;
 		double ypos;
 		glfwGetCursorPos(window, &xpos, &ypos);
-
+	
 		if (xpos != lastX || ypos != lastY)
 		{
 			mouseMovementPoll(window, xpos, ypos);
@@ -299,7 +296,7 @@ void init(GLFWwindow* window)
 	sunShader = std::make_unique<Shader>("../Shader/basic.vert",
 		"../Shader/sun.frag");
 	//cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
-	cam = std::make_unique<Camera>(0.0f, 0.0f, 8.0f);
+	cam = std::make_unique<Camera>(0.0f, 5.0f, 8.0f);
 	player = std::make_unique<Model>("../Models/player.dae");
 	plattform = std::make_unique<Model>("../Models/plattform.dae");
 	sun = std::make_unique<Model>("../Models/sun.dae");
