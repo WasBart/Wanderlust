@@ -41,9 +41,9 @@ void main()
     vec3 lightDir = normalize(-light.direction);
 	float diff = max(dot(norm, lightDir), 0.0);
 	diff = floor(diff * levels) / levels;
-	vec3 diffuse = diff * mat.diffuse * light.diffuse;
+	vec3 diffuse = diff * light.diffuse;
 	
-    vec3 textureColor = texture(tex, fragmentUV).rgb;
+  
 	
 	//Specular Part 
 	
@@ -53,6 +53,15 @@ void main()
 	vec3 specular = light.specular * spec * mat.specular; 
 
 	//Resulting Light
-	vec3 result = (ambient + diffuse+specular)* textureColor;
+	vec3 result = (ambient + diffuse + specular);
+	vec3 textureColor = texture(tex, fragmentUV).rgb;
+	
+	if(length(textureColor) != 0){
+	result = result * textureColor;
+	}
+	else{
+	result = result * mat.diffuse;
+	}
+
 	fragColor = vec4(result,1.0);
 }
