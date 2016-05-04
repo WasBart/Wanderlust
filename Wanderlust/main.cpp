@@ -36,6 +36,7 @@ std::unique_ptr<Shader> toonShader;
 
 std::unique_ptr<Model> player;
 std::unique_ptr<Model> plattform;
+std::unique_ptr<Model> plattform2;
 std::unique_ptr<Model> sphere;
 std::unique_ptr<Model> path;
 std::unique_ptr<Model> path2;
@@ -198,7 +199,9 @@ int main(int argc, char** argv){
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		rad += (glm::pi<float>() / 180.0f) * 20 * time_delta;
 		plattform->position = glm::vec3(5, 0, sin(rad) * 10.0f);
-		plattform->update();
+		
+		
+		plattform2->angle = 2*rad;
 
 		int playerWidth = abs(player->maxVector.x) + abs(player->minVector.x);
 		int playerBreadth = abs(player->maxVector.z) + abs(player->minVector.z);
@@ -363,12 +366,13 @@ void init(GLFWwindow* window)
 	shader = std::make_unique<Shader>("../Shader/basic.vert",
 		"../Shader/basic.frag");
 	toonShader = std::make_unique<Shader>("../Shader/basic.vert",
-		"../Shader/toon.frag");
+		"../Shader/toon2.frag");
 
 	//cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
 	cam = std::make_unique<Camera>(0.0f, 5.0f, 8.0f);
 	player = std::make_unique<Model>("../Models/player.dae");
 	plattform = std::make_unique<Model>("../Models/plattform.dae");
+	plattform2 = std::make_unique<Model>("../Models/plattform.dae");
 	sphere = std::make_unique<Model>("../Models/sphere.dae");
 	path = std::make_unique<Model>("../Models/path.dae");
 	path2 = std::make_unique<Model>("../Models/path.dae");
@@ -399,31 +403,46 @@ void init(GLFWwindow* window)
 	plattform->position = glm::vec3(5.0f, -1.0f, 0);
 	plattform->viewMatrix = view;
 	plattform->update();
+
+	plattform2->position = glm::vec3(-5.0f, 3.0f, 0);
+	plattform2->viewMatrix = view;
+	plattform2->update();
+
 	
 
 	//ToonShader
 	toonShader->useShader();
 
-	GLint modelView = glGetUniformLocation(toonShader->programHandle, "view");
+	int modelView = glGetUniformLocation(shader->programHandle, "view");
 	glUniformMatrix4fv(modelView, 1, GL_FALSE, glm::value_ptr(view));
 
-	GLint modelProjection = glGetUniformLocation(toonShader->programHandle, "projection");
+	int modelProjection = glGetUniformLocation(shader->programHandle, "projection");
 	glUniformMatrix4fv(modelProjection, 1, GL_FALSE, glm::value_ptr(projection));
-		
-	GLint objectColorPos = glGetUniformLocation(toonShader->programHandle, "objectDiffuse");
-	glUniform3f(objectColorPos, 0.27f, 0.51f, 0.71f);
+
+	//Setting MaterialProperties
+
+	GLint matAmbientPos = glGetUniformLocation(shader->programHandle, "mat.ambient");
+	GLint matDiffusePos = glGetUniformLocation(shader->programHandle, "mat.diffuse");
+	GLint matSpecularPos = glGetUniformLocation(shader->programHandle, "mat.specular");
+	GLint matShinePos = glGetUniformLocation(shader->programHandle, "mat.shininess");
+
+	glUniform3f(matAmbientPos, 0.5f, 0.5f, 0.5f);
+	glUniform3f(matDiffusePos, 0.3f, 0.3f, 0.7f);
+	glUniform3f(matSpecularPos, 0.0f, 0.0f, 0.0f);
+	glUniform1f(matShinePos, 40.0f);
+
+
 	//Setting LightProperties
 
-	GLint lightAmbientPos = glGetUniformLocation(toonShader->programHandle, "light.ambient");
-	GLint lightDiffusePos = glGetUniformLocation(toonShader->programHandle, "light.diffuse");
-	
-	GLint lightDirectionPos = glGetUniformLocation(toonShader->programHandle, "light.direction");
+	GLint lightAmbientPos = glGetUniformLocation(shader->programHandle, "light.ambient");
+	GLint lightDiffusePos = glGetUniformLocation(shader->programHandle, "light.diffuse");
+	GLint lightSpecularPos = glGetUniformLocation(shader->programHandle, "light.specular");
+	GLint lightDirectionPos = glGetUniformLocation(shader->programHandle, "light.direction");
 
 	glUniform3f(lightDirectionPos, -1.0f, -1.0f, -1.0f);
-	glUniform3f(lightAmbientPos, 0.2f, 0.2f, 0.2f);
+	glUniform3f(lightAmbientPos, 0.5f, 0.5f, 0.5f);
 	glUniform3f(lightDiffusePos, 1.0f, 1.0f, 1.0f);
-	//glUniform3f(lightSpecularPos, 1.0f, 1.0f, 1.0f);
-	
+	glUniform3f(lightSpecularPos, 1.0f, 1.0f, 1.0f);
 	glm::vec3 spherePos(-5.0f, 5.0f, -10.0f);
 	sphere->position = spherePos;
 	sphere->viewMatrix = view;
@@ -435,15 +454,15 @@ void init(GLFWwindow* window)
 	modelView = glGetUniformLocation(shader->programHandle, "view");
 	glUniformMatrix4fv(modelView, 1, GL_FALSE, glm::value_ptr(view));
 
-	modelProjection = glGetUniformLocation(shader->programHandle, "projection");
+    modelProjection = glGetUniformLocation(shader->programHandle, "projection");
 	glUniformMatrix4fv(modelProjection, 1, GL_FALSE, glm::value_ptr(projection));
 		
 	//Setting MaterialProperties
 
-	GLint matAmbientPos = glGetUniformLocation(shader->programHandle, "mat.ambient");
-	GLint matDiffusePos = glGetUniformLocation(shader->programHandle, "mat.diffuse");
-	GLint matSpecularPos = glGetUniformLocation(shader->programHandle, "mat.specular");
-	GLint matShinePos = glGetUniformLocation(shader->programHandle, "mat.shininess");
+	matAmbientPos = glGetUniformLocation(shader->programHandle, "mat.ambient");
+	matDiffusePos = glGetUniformLocation(shader->programHandle, "mat.diffuse");
+	matSpecularPos = glGetUniformLocation(shader->programHandle, "mat.specular");
+	matShinePos = glGetUniformLocation(shader->programHandle, "mat.shininess");
 
 	glUniform3f(matAmbientPos, 0.1f, 0.1f, 0.1f);
 	glUniform3f(matDiffusePos, 1.0f, 1.0f, 1.0f);
@@ -455,7 +474,7 @@ void init(GLFWwindow* window)
 
 	lightAmbientPos = glGetUniformLocation(shader->programHandle, "light.ambient");
 	lightDiffusePos = glGetUniformLocation(shader->programHandle, "light.diffuse");
-	GLint lightSpecularPos = glGetUniformLocation(shader->programHandle, "light.specular");
+	lightSpecularPos = glGetUniformLocation(shader->programHandle, "light.specular");
     lightDirectionPos = glGetUniformLocation(shader->programHandle, "light.direction");
 
 	glUniform3f(lightDirectionPos, -1.0f, -1.0f, -1.0f);
@@ -500,6 +519,8 @@ void draw(){
 
 	plattform->viewMatrix = view;
 	plattform->draw(shader.get());
+	plattform2->viewMatrix = view;
+	plattform2->draw(shader.get());
 
 	
 

@@ -134,7 +134,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 		vector.z = mesh->mNormals[i].z;
 		vertex.Normal = vector;
 
-		if (mesh->mTextureCoords[0]) // Does the mesh contain texture coordinates?
+		if (mesh->mTextureCoords[0]) // No textureCoordinates found
 		{
 			glm::vec2 vec;
 			vec.x = mesh->mTextureCoords[0][i].x;
