@@ -539,12 +539,7 @@ void mouseMovementPoll(GLFWwindow* window, double xpos, double ypos)
 	if (pitch < -29.0f)
 		pitch = -29.0f;
 
-	glm::vec3 front;
-	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-	front.y = sin(glm::radians(pitch));
-	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-
-	auto t1 = glm::rotate(glm::mat4(), glm::radians(yaw), glm::vec3(0, 1, 0));
+	auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
 	auto t2 = glm::rotate(glm::mat4(), glm::radians(pitch), glm::vec3(1, 0, 0));
 	auto t3 = glm::translate(glm::mat4(), player->center);
 	auto t4 = t3 * t2 * t1;
