@@ -6,15 +6,18 @@ layout (location = 2) in vec2 uv;
 
 out vec3 worldNormal;
 out vec2 fragmentUV;
-
+out vec3 fragPos;  
+out vec3 viewPos;
 
 layout (location = 4) uniform mat4 model; 
-uniform mat4 view;
+layout (location = 5) uniform mat4 view;
 uniform mat4 projection;
 
 void main()
 {
 	fragmentUV = uv;
-	worldNormal = (model * vec4(normal,0)).xyz;
+	worldNormal = mat3(transpose(inverse(model))) * normal;  
+	fragPos = (model * vec4(position, 1.0f)).xyz;
+	viewPos = vec3((inverse(view)[3]));
 	gl_Position = projection* view* model* vec4(position,1);
 }
