@@ -15,14 +15,8 @@ public:
 	Model(std::string path);
 	void draw(cgue::Shader* shader);
 	GLuint Model::loadTexture(std::string filePath);
-	void update();
-	glm::vec3 position = glm::vec3(0,0,0);
-	glm::vec3 scale = glm::vec3(1, 1, 1);
-	GLfloat angle = 0;
-	glm::mat4 viewMatrix;
-	glm::vec3 center;
-	glm::vec3 minVector;
-	glm::vec3 maxVector;
+	void update(float time_delta);
+	glm::vec3 positon;
 
 private:
 	
@@ -32,8 +26,6 @@ private:
 	void loadModel(std::string path);
 	void processNode(aiNode* node, const aiScene* scene);
 	Mesh processMesh(aiMesh* mesh, const aiScene* scene);
-
-	
 	
 	//For Textures;
 	std::vector<GLuint> loadMaterialTextures(aiMaterial* mat);

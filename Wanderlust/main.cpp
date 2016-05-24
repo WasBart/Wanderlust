@@ -3,7 +3,6 @@
 #include <glew\glew.h>
 #include <GLFW\glfw3.h>
 
-#define GLM_SWIZZLE
 #include <glm\glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -14,7 +13,7 @@
 #include <Windows.h>
 #include "Model.h"
 #include "Mesh.h"
-#include "Camera.h"
+
 
 using namespace cgue;
 using namespace cgue::scene;
@@ -25,93 +24,24 @@ void init(GLFWwindow* window);
 void cleanup();
 void draw();
 void update(float time_delta);
-void mouseMovementPoll(GLFWwindow* window, double xpos, double ypos);
-
-
-std::unique_ptr<Camera> cam;
 
 std::unique_ptr<Shader> shader;
-std::unique_ptr<Shader> toonShader;
-
-
-std::unique_ptr<Model> player;
-std::unique_ptr<Model> plattform;
-std::unique_ptr<Model> plattform2;
-std::unique_ptr<Model> sphere;
-std::unique_ptr<Model> path;
-std::unique_ptr<Model> path2;
-std::unique_ptr<Model> path3;
-
+std::unique_ptr<Model> mode;
 glm::mat4 persp;
-glm::mat4 view;
 glm::vec3 cameraPos;
-glm::vec3 direction = glm::vec3(0.0,0.0,-1.0);
-float width;
-float height;
-float rad = 0.0f;
+//std::unique_ptr<Cube> cube;
 
 
-GLfloat lastX = 400, lastY = 300;
-GLfloat yaw = 0.0f;
-GLfloat pitch = 0.0f;
-glm::vec4 camUp = glm::vec4(0.0f,1.0f,0.0f,1.0f);
+int main(){
 
-int main(int argc, char** argv){
-
-	width = 800;
-	height = 600;
-	bool fullScreen = false;
-	float refreshRate = 60;
-	
-	if (argc >= 5) {
-	
-		if ((std::stringstream(argv[1]) >> width).fail())
-		{
-			std::cerr << "ERROR: Could not parse first Element,try again" << std::endl;
-			system("PAUSE");
-			exit(EXIT_FAILURE);
-
-		}
-		lastX = width / 2.0f;
-
-		if ((std::stringstream(argv[2]) >> height).fail())
-		{
-			std::cerr << "ERROR: Could not parse second Element,try again" << std::endl;
-			system("PAUSE");
-			exit(EXIT_FAILURE);
-
-		}
-		lastY = height / 2.0f;
-
-		std::string full;
-
-		if ((std::stringstream(argv[3]) >> full).fail())
-		{
-			std::cerr << "ERROR: Could not parse third Element,try again" << std::endl;
-			system("PAUSE");
-			exit(EXIT_FAILURE);
-
-		}
-
-		if (full.compare("full") == 0)
-		{
-			fullScreen = true;
-		}
-
-		if ((std::stringstream(argv[4]) >> refreshRate).fail())
-		{
-			std::cerr << "ERROR: Could not parse fourth Element,try again" << std::endl;
-			system("PAUSE");
-			exit(EXIT_FAILURE);
-
-		}
-	}
-	if (!glfwInit())
-	{
+	if (!glfwInit()){
 		std::cerr << "Could not init glfw!" << std::endl;
 		system("Pause");
 		exit(EXIT_FAILURE);
 	}
+
+	const int width = 800;
+	const int height = 600;
 	
 
 #if _DEBUG
@@ -120,32 +50,20 @@ int main(int argc, char** argv){
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	GLFWwindow* window;
 
-	if (fullScreen)
-	{
-		window = glfwCreateWindow(width, height, "CGUE", glfwGetPrimaryMonitor(), nullptr);
-	}
-	else
-	{
-		window = glfwCreateWindow(width, height, "CGUE", nullptr, nullptr);
-	}
+	auto window = glfwCreateWindow(width, height, "CGUE", nullptr, nullptr);
 
-	if (!window)
-	{
+	if (!window){
 		std::cerr << ("ERROR : Could not create window!") << std::endl;
 		glfwTerminate();
 		system("Pause");
 		exit(EXIT_FAILURE);
 	}
 
-	glfwWindowHint(GLFW_REFRESH_RATE, refreshRate);
-
 	glfwMakeContextCurrent(window);
 
 	glewExperimental = true;
-	if (glewInit() != GLEW_OK)
-	{
+	if (glewInit() != GLEW_OK){
 		std::cerr << ("ERROR : Could not load glew!") << std::endl;
 		glfwTerminate();
 		system("Pause");
@@ -182,13 +100,11 @@ int main(int argc, char** argv){
 
 	glClearColor(0.35f, 0.36f, 0.43f, 0.3f);
 	glViewport(0, 0, width, height);
-	
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
 	auto time = glfwGetTime();
-	while (!glfwWindowShouldClose(window))
-	{
+	while (!glfwWindowShouldClose(window)){
 
 		auto time_new = glfwGetTime();
 		auto time_delta = (float)(time_new - time);
@@ -198,199 +114,43 @@ int main(int argc, char** argv){
 			<< " =~" << 1.0 / time_delta << "fps" << std::endl;*/
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		rad += (glm::pi<float>() / 180.0f) * 20 * time_delta;
-		plattform->position = glm::vec3(5, 0, sin(rad) * 10.0f);
+	
+		//update(time_delta);
 		
 		
-		plattform2->angle = 2*rad;
-
-		int playerWidth = abs(player->maxVector.x) + abs(player->minVector.x);
-		int playerBreadth = abs(player->maxVector.z) + abs(player->minVector.z);
-		int pathWidth = abs(path->minVector.x) + abs(path->maxVector.x);
-		int pathBreadth = abs(path->minVector.z) + abs(path->maxVector.z);
-
-		int msgboxID;
-
-		if ((player->position.z - playerBreadth / 2.0f <= path->position.z) &&
-			player->position.z + playerBreadth / 2.0f >= path->position.z - pathBreadth){
-
-			if (player->position.x + playerWidth / 2.0f  < path->position.x - pathWidth / 2.0f ||
-				player->position.x - playerWidth / 2.0f > path->position.x + pathWidth / 2.0f){
-				msgboxID = MessageBox(
-					NULL,
-					L"You lost.\nTry again?",
-					L"Don't give up!",
-					MB_ICONINFORMATION | MB_YESNO
-					);
-
-				if (msgboxID == IDYES)
-				{
-					init(window);
-				}
-				else{
-					glfwSetWindowShouldClose(window, true);
-				}
-			}
-		}
-		else if ((player->position.z - playerBreadth / 2.0f <= path2->position.z) &&
-			player->position.z + playerBreadth / 2.0f >= path2->position.z - pathBreadth){
-
-			if (player->position.x + playerWidth / 2.0f< path2->position.x - pathWidth / 8.0f ||
-				player->position.x - playerWidth / 2.0f> path2->position.x + pathWidth / 8.0f){
-				msgboxID = MessageBox(
-					NULL,
-					L"You lost.\nTry again?",
-					L"Don't give up!",
-					MB_ICONINFORMATION | MB_YESNO
-					);
-
-				if (msgboxID == IDYES)
-				{
-					init(window);
-				}
-				else{
-					glfwSetWindowShouldClose(window, true);
-				}
-			}
-
-		}
-		else if ((player->position.z - playerBreadth / 2.0f <= path3->position.z) &&
-			player->position.z + playerBreadth / 2.0f >= path3->position.z - pathBreadth / 5.0f){
-			msgboxID = MessageBox(
-				NULL,
-				L"You won!\nHow 'bout another round?",
-				L"Congratulations!",
-				MB_ICONINFORMATION | MB_YESNO
-				);
-
-			if (msgboxID == IDYES)
-			{
-				init(window);
-			}
-			else{
-				glfwSetWindowShouldClose(window, true);
-			}
-		}
-		else{
-			msgboxID = MessageBox(
-				NULL,
-				L"You lost.\nTry again?",
-				L"Don't give up!",
-				MB_ICONINFORMATION | MB_YESNO
-				);
-
-			if (msgboxID == IDYES)
-			{
-				init(window);
-			}
-			else{
-				glfwSetWindowShouldClose(window, true);
-			}
-		}
-
 		draw();
-
+		
 		glfwSwapBuffers(window);
 		glfwPollEvents();
-		
-		double xpos;
-		double ypos;
-		glfwGetCursorPos(window, &xpos, &ypos);
-	
-		if (xpos != lastX || ypos != lastY)
-		{
-			mouseMovementPoll(window, xpos, ypos);
-		}
 
-		if (glfwGetKey(window, GLFW_KEY_ESCAPE))
-		{
+		if (glfwGetKey(window, GLFW_KEY_ESCAPE)){
 			glfwSetWindowShouldClose(window, true);
 		}
 		
-		if (glfwGetKey(window, GLFW_KEY_F1))
-		{
+		if (glfwGetKey(window, GLFW_KEY_F1)){
 			glTranslatef(0.0f, 0.0f, 0.0f);
 		}
 
 		if (glfwGetKey(window, GLFW_KEY_A)){
-			//player->position.x -= 10 * time_delta;
-			//player->center.x -= 10 * time_delta;
-			player->angle = glm::radians(-yaw + 90);
-			auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
-			glm::vec4 oldDirection = glm::vec4(-1.0, 0.0, 0.0, 1.0);
-			glm::vec4 newDirection = t1 * oldDirection;
-
-			player->position.x += newDirection.x * time_delta * 10;
-			player->position.z += newDirection.z * time_delta * 10;
-
-			player->center.x += newDirection.x * time_delta * 10;
-			player->center.z += newDirection.z * time_delta * 10;
-			player->update();
-
-			view = cam->update(glm::vec3(cam->eyeX += newDirection.x * time_delta * 10, cam->eyeY, cam->eyeZ += newDirection.z * time_delta * 10), player->center);
-			GLint model_view = glGetUniformLocation(shader->programHandle, "view");
-			glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
+			mode->positon.x -= 10 * time_delta;
+			std::cout << mode->positon.x << std::endl;
+			mode->update(time_delta);
 		}
-		else if (glfwGetKey(window, GLFW_KEY_D))
-		{
-			//player->position.x += 10* time_delta;
-			//player->center.x += 10 * time_delta;
-			player->angle = glm::radians(-yaw - 90);
-			auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
-			glm::vec4 oldDirection = glm::vec4(1.0, 0.0, 0.0, 1.0);
-			glm::vec4 newDirection = t1 * oldDirection;
-
-			player->position.x += newDirection.x * time_delta * 10;
-			player->position.z += newDirection.z * time_delta * 10;
-
-			player->center.x += newDirection.x * time_delta * 10;
-			player->center.z += newDirection.z * time_delta * 10;
-			player->update();
-
-			view = cam->update(glm::vec3(cam->eyeX += newDirection.x * time_delta * 10, cam->eyeY, cam->eyeZ += newDirection.z * time_delta * 10), player->center);
-			GLint model_view = glGetUniformLocation(shader->programHandle, "view");
-			glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
+		else if (glfwGetKey(window, GLFW_KEY_D)){
+			mode->positon.x += 10* time_delta;
+			std::cout << mode->positon.x << std::endl;
+			mode->update(time_delta);	
 		}
 
-		if (glfwGetKey(window, GLFW_KEY_W))
-		{
-			//player->position.z -= 10 * time_delta;
-			//player->center.z -= 10 * time_delta;
-			player->angle = glm::radians(-yaw);
-			auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
-			glm::vec4 oldDirection = glm::vec4(direction.x, direction.y, direction.z, 1.0);
-			glm::vec4 newDirection = t1 * oldDirection;
-
-			player->position.x += newDirection.x * time_delta * 10;
-			player->position.z += newDirection.z * time_delta * 10;
-
-			player->center.x += newDirection.x * time_delta * 10;
-			player->center.z += newDirection.z * time_delta * 10;
-			player->update();
-
-			view = cam->update(glm::vec3(cam->eyeX += newDirection.x * time_delta * 10, cam->eyeY, cam->eyeZ += newDirection.z * time_delta * 10), player->center);
-			GLint model_view = glGetUniformLocation(shader->programHandle, "view");
-			glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
+		if (glfwGetKey(window, GLFW_KEY_W)){
+			mode->positon.z -= 10 * time_delta;
+			std::cout << mode->positon.x << std::endl;
+			mode->update(time_delta);
 		}
-		else if (glfwGetKey(window, GLFW_KEY_S))
-		{
-			//player->position.z += 10 * time_delta;
-			//player->center.z += 10 * time_delta;
-			player->angle = glm::radians(-yaw + 180);
-			auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
-			glm::vec4 oldDirection = glm::vec4(direction.x * -1.0, direction.y * -1.0, direction.z * -1.0, 1.0);
-			glm::vec4 newDirection = t1 * oldDirection;
-
-			player->position.x += newDirection.x * time_delta * 10;
-			player->position.z += newDirection.z * time_delta * 10;
-
-			player->center.x += newDirection.x * time_delta * 10;
-			player->center.z += newDirection.z * time_delta * 10;
-			player->update();
-
-			view = cam->update(glm::vec3(cam->eyeX += newDirection.x * time_delta * 10, cam->eyeY, cam->eyeZ += newDirection.z * time_delta * 10), player->center);
-			GLint model_view = glGetUniformLocation(shader->programHandle, "view");
-			glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
+		else if (glfwGetKey(window, GLFW_KEY_S)){
+			mode->positon.z += 10 * time_delta;
+			std::cout << mode->positon.x << std::endl;
+			mode->update(time_delta);
 		}
 	}
 
@@ -401,220 +161,50 @@ int main(int argc, char** argv){
 	return EXIT_SUCCESS;
 }
 
-void init(GLFWwindow* window)
-{
+void init(GLFWwindow* window){
 
 	shader = std::make_unique<Shader>("../Shader/basic.vert",
 		"../Shader/basic.frag");
-	toonShader = std::make_unique<Shader>("../Shader/basic.vert",
-		"../Shader/toon2.frag");
-
 	//cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
-	cam = std::make_unique<Camera>(0.0f, 5.0f, 8.0f);
-	player = std::make_unique<Model>("../Models/player.dae");
-	plattform = std::make_unique<Model>("../Models/plattform.dae");
-	plattform2 = std::make_unique<Model>("../Models/plattform.dae");
-	sphere = std::make_unique<Model>("../Models/sphere.dae");
-	path = std::make_unique<Model>("../Models/path.dae");
-	path2 = std::make_unique<Model>("../Models/path.dae");
-	path3 = std::make_unique<Model>("../Models/path.dae");
-
+	mode = std::make_unique<Model>("../nanosuit/nanosuit.obj");
 	
-	glm::mat4 projection;
-	player->position = glm::vec3(0, 0, 0);
-	player->update();
-	view = cam->setUp(player->center);
-
-	projection = glm::perspective(glm::radians(60.0f), width / height, 0.1f, 100.0f);
-	player->viewMatrix = view;
-	path->viewMatrix = view;
-	path->position = glm::vec3(0, -1.0f, 1.0f);
-	path->update();
-
-	path2->position = glm::vec3(-1.0f, -1.0f, path->position.z - abs(path->minVector.z) + abs(path->maxVector.z));
-	path2->scale = glm::vec3(0.25f, 1.0f, 1.0f);
-	path2->update();
-
-	path3->position = glm::vec3(-0.7f, -1.0f, path2->position.z - abs(path->minVector.z) + abs(path->maxVector.z));
-	path3->scale = glm::vec3(1.0f, 1.0f, 0.2f);
-	path3->update();
-
-	player->position = glm::vec3(0, 0, 0);
-	player->update();
-	plattform->position = glm::vec3(5.0f, -1.0f, 0);
-	plattform->viewMatrix = view;
-	plattform->update();
-
-	plattform2->position = glm::vec3(-5.0f, 3.0f, 0);
-	plattform2->viewMatrix = view;
-	plattform2->update();
-
-	
-
-	//ToonShader
-	toonShader->useShader();
-
-	int modelView = glGetUniformLocation(shader->programHandle, "view");
-	glUniformMatrix4fv(modelView, 1, GL_FALSE, glm::value_ptr(view));
-
-	int modelProjection = glGetUniformLocation(shader->programHandle, "projection");
-	glUniformMatrix4fv(modelProjection, 1, GL_FALSE, glm::value_ptr(projection));
-
-	//Setting MaterialProperties
-
-	GLint matAmbientPos = glGetUniformLocation(shader->programHandle, "mat.ambient");
-	GLint matDiffusePos = glGetUniformLocation(shader->programHandle, "mat.diffuse");
-	GLint matSpecularPos = glGetUniformLocation(shader->programHandle, "mat.specular");
-	GLint matShinePos = glGetUniformLocation(shader->programHandle, "mat.shininess");
-
-	glUniform3f(matAmbientPos, 0.5f, 0.5f, 0.5f);
-	glUniform3f(matDiffusePos, 0.3f, 0.3f, 0.7f);
-	glUniform3f(matSpecularPos, 0.0f, 0.0f, 0.0f);
-	glUniform1f(matShinePos, 40.0f);
-
-
-	//Setting LightProperties
-
-	GLint lightAmbientPos = glGetUniformLocation(shader->programHandle, "light.ambient");
-	GLint lightDiffusePos = glGetUniformLocation(shader->programHandle, "light.diffuse");
-	GLint lightSpecularPos = glGetUniformLocation(shader->programHandle, "light.specular");
-	GLint lightDirectionPos = glGetUniformLocation(shader->programHandle, "light.direction");
-
-	glUniform3f(lightDirectionPos, -1.0f, -1.0f, -1.0f);
-	glUniform3f(lightAmbientPos, 0.5f, 0.5f, 0.5f);
-	glUniform3f(lightDiffusePos, 1.0f, 1.0f, 1.0f);
-	glUniform3f(lightSpecularPos, 1.0f, 1.0f, 1.0f);
-	glm::vec3 spherePos(-5.0f, 5.0f, -10.0f);
-	sphere->position = spherePos;
-	sphere->viewMatrix = view;
-	sphere->update();
-
-	//Basic Shader
 	shader->useShader();
 
-	modelView = glGetUniformLocation(shader->programHandle, "view");
-	glUniformMatrix4fv(modelView, 1, GL_FALSE, glm::value_ptr(view));
+	glm::mat4 view;
+	glm::mat4 projection;
 
-    modelProjection = glGetUniformLocation(shader->programHandle, "projection");
-	glUniformMatrix4fv(modelProjection, 1, GL_FALSE, glm::value_ptr(projection));
-		
-	//Setting MaterialProperties
-
-	matAmbientPos = glGetUniformLocation(shader->programHandle, "mat.ambient");
-	matDiffusePos = glGetUniformLocation(shader->programHandle, "mat.diffuse");
-	matSpecularPos = glGetUniformLocation(shader->programHandle, "mat.specular");
-	matShinePos = glGetUniformLocation(shader->programHandle, "mat.shininess");
-
-	glUniform3f(matAmbientPos, 0.1f, 0.1f, 0.1f);
-	glUniform3f(matDiffusePos, 1.0f, 1.0f, 1.0f);
-	glUniform3f(matSpecularPos, 1.0f, 1.0f, 1.0f);
-	glUniform1f(matShinePos, 1.0f);
+	view = glm::translate(view, glm::vec3(0.0f, -10.0f, -20.0f));
+	projection = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
 
 
-	//Setting LightProperties
+	GLint model_view = glGetUniformLocation(shader->programHandle, "view");
+	glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
 
-	lightAmbientPos = glGetUniformLocation(shader->programHandle, "light.ambient");
-	lightDiffusePos = glGetUniformLocation(shader->programHandle, "light.diffuse");
-	lightSpecularPos = glGetUniformLocation(shader->programHandle, "light.specular");
-    lightDirectionPos = glGetUniformLocation(shader->programHandle, "light.direction");
-
-	glUniform3f(lightDirectionPos, -1.0f, -1.0f, -1.0f);
-	glUniform3f(lightAmbientPos, 0.2f, 0.2f, 0.2f);
-	glUniform3f(lightDiffusePos, 1.0f, 1.0f, 1.0f);
-	glUniform3f(lightSpecularPos, 1.0f, 1.0f, 1.0f);
-
-
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	GLint model_projection = glGetUniformLocation(shader->programHandle, "projection");
+	glUniformMatrix4fv(model_projection, 1, GL_FALSE, glm::value_ptr(projection));
 
 }
-void cleanup()
-{
+void cleanup(){
 
-	player.reset(nullptr);
+	//cube.reset(nullptr);
+	mode.reset(nullptr);
 	shader.reset(nullptr);
-	cam.reset(nullptr);
-	sphere.reset(nullptr);
 	
 }
 void draw(){
-			
-
 	
-
-	toonShader->useShader();
-	player->viewMatrix = view;
-	player->draw(shader.get());
 	
-	sphere->viewMatrix = view;
-	sphere->draw(toonShader.get());
-
-	shader->useShader();
-	path->viewMatrix = view;
-	path->draw(shader.get());
 	
-	path2->viewMatrix = view;
-	path2->draw(shader.get());
+	glm::mat4 model;
 
-	path3->viewMatrix = view;
-	path3->draw(shader.get());
-
-	plattform->viewMatrix = view;
-	plattform->draw(shader.get());
-	plattform2->viewMatrix = view;
-	plattform2->draw(shader.get());
-
-	
+	mode->draw(shader.get());
 
 }
-
-void update(float time_delta)
-{
-	player->update();
+void update(float time_delta){
+	mode->update(time_delta);
 }
 
-bool firstMouse = true;
-void mouseMovementPoll(GLFWwindow* window, double xpos, double ypos)
-{
-	
-	if (firstMouse)
-	{
-		lastX = xpos;
-		lastY = ypos;
-		firstMouse = false;
-	}
 
-	GLfloat xoffset = xpos - lastX;
-	GLfloat yoffset = lastY - ypos;
-	lastX = xpos;
-	lastY = ypos;
-
-	GLfloat sensitivity = 0.05;
-	GLfloat ySensitivity = 0.005;
-	xoffset *= sensitivity;
-	yoffset *= ySensitivity;
-
-	yaw += xoffset;
-	pitch += yoffset;
-
-	if (pitch > 29.0f)
-		pitch = 29.0f;
-	if (pitch < -29.0f)
-		pitch = -29.0f;
-
-	auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
-	auto t2 = glm::rotate(glm::mat4(), glm::radians(pitch), glm::vec3(1, 0, 0));
-	auto t3 = glm::translate(glm::mat4(), player->center);
-	auto t4 = t3 * t2 * t1;
-
-	camUp = t2 * t1 * glm::vec4(0, 1, 0, 1);
-	glm::vec4 eye = t4 * glm::vec4(0.0f, 4.0f, 8.0f, 1.0f);
-	cam->eyeX = eye.x;
-	cam->eyeY = eye.y;
-	cam->eyeZ = eye.z;
-	view = cam->useUp(eye.xyz(), player->center, camUp.xyz());
-	GLint model_view = glGetUniformLocation(shader->programHandle, "view");
-	glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
-}
 
 static void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const GLvoid* userParam) {
 	switch (id) {
@@ -742,7 +332,7 @@ static std::string FormatDebugOutput(GLenum source, GLenum type, GLuint id, GLen
 		break;
 	}
 	}
-	
+
 	stringStream << "OpenGL Error: " << msg;
 	stringStream << " [Source = " << sourceString;
 	stringStream << ", Type = " << typeString;

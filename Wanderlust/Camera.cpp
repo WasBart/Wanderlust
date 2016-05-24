@@ -1,29 +1,19 @@
 #include "Camera.h"
-#include <glm\glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 
-	Camera::Camera(GLfloat _eyeX, GLfloat _eyeY, GLfloat _eyeZ)
+	Camera::Camera(GLdouble _eyeX, GLdouble _eyeY, GLdouble _eyeZ)
 	{
 		this->eyeX = _eyeX;
 		this->eyeY = _eyeY;
 		this->eyeZ = _eyeZ;
-		this->up = glm::vec3(0.0f, 1.0f, 0.0f);
 	}
 
-	glm::mat4 Camera::setUp(glm::vec3 & center)
+	void Camera::setUp(GLdouble centerX, GLdouble centerY, GLdouble centerZ)
 	{
-		return glm::lookAt(glm::vec3(this->eyeX, this-> eyeY, this-> eyeZ), center, this->up);
+		//gluLookAt(this->eyeX, this->eyeY, this->eyeZ, centerX, centerY, centerZ, 0, -1, 0);
 	}
 
-	glm::mat4 Camera::update(glm::vec3 & eye, glm::vec3 & center)
+	void Camera::update(GLdouble centerX, GLdouble centerY, GLdouble centerZ)
 	{
-		return glm::lookAt(eye, center, this->up);
-	}
-
-	glm::mat4 Camera::useUp(glm::vec3 & eye, glm::vec3 & center, glm::vec3 & up)
-	{
-		this->up = up;
-		return glm::lookAt(eye, center, up);
+		this->setUp(centerX, centerY, centerZ);
 	}

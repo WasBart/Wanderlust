@@ -14,9 +14,7 @@ Model::Model(std::string path)
 Drawing all Meshes from this Model
 */
 void Model::draw(cgue::Shader* shader){
-	update();
 	for (GLuint i = 0; i < this->meshes.size(); i++){
-		this->meshes[i].viewMatrix = viewMatrix;
 		this->meshes[i].draw(shader);
 	}
 }
@@ -24,13 +22,11 @@ void Model::draw(cgue::Shader* shader){
 /*
 Updating all Meshes from this Model
 */
-void Model::update(){
+void Model::update(float time_delta){
 	glm::mat4 model;
-	model = glm::translate(model, position);
-	model = glm::rotate(model,angle,glm::vec3(0,1,0));
-	model = glm::scale(model, scale);
+	model = glm::translate(model, positon);
 	for (GLuint i = 0; i < this->meshes.size(); i++){
-		this->meshes[i].update(model);
+		this->meshes[i].update(time_delta, model);
 	}
 }
 
@@ -57,7 +53,6 @@ void Model::processNode(aiNode* node, const aiScene* scene)
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 		this->meshes.push_back(this->processMesh(mesh, scene));
 	}
-	this->center = (minVector + maxVector) / 2.0f;
 
 	for (GLuint i = 0; i < node->mNumChildren; i++)
 	{
@@ -71,7 +66,6 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 	std::vector<GLuint> indices;
 	std::vector<GLuint> textures;
 
-	bool firstRound = true;
 	for (GLuint i = 0; i < mesh->mNumVertices; i++)
 	{
 		Vertex vertex;
@@ -80,53 +74,6 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 		vector.x = mesh->mVertices[i].x;
 		vector.y = mesh->mVertices[i].y;
 		vector.z = mesh->mVertices[i].z;
-
-		if (firstRound)
-		{
-			minVector.x = vector.x;
-			minVector.y = vector.y;
-			minVector.z = vector.z;
-
-			maxVector.x = vector.x;
-			maxVector.y = vector.y;
-			maxVector.z = vector.z;
-
-			firstRound = false;
-		}
-		else
-		{
-			if (vector.x < minVector.x)
-			{
-				minVector.x = vector.x;
-			}
-
-			if (vector.y < minVector.y)
-			{
-				minVector.y = vector.y;
-			}
-
-			if (vector.z < minVector.z)
-			{
-				minVector.z = vector.z;
-			}
-
-			if (vector.x > maxVector.x)
-			{
-				maxVector.x = vector.x;
-			}
-
-			if (vector.y > maxVector.y)
-			{
-				maxVector.y = vector.y;
-			}
-
-			if (vector.z > maxVector.z)
-			{
-				maxVector.z = vector.z;
-			}
-
-		}
-
 		vertex.Position = vector;
 		//Normals
 		vector.x = mesh->mNormals[i].x;
@@ -134,7 +81,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 		vector.z = mesh->mNormals[i].z;
 		vertex.Normal = vector;
 
-		if (mesh->mTextureCoords[0]) // No textureCoordinates found
+		if (mesh->mTextureCoords[0]) // Does the mesh contain texture coordinates?
 		{
 			glm::vec2 vec;
 			vec.x = mesh->mTextureCoords[0][i].x;
@@ -142,7 +89,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
 			vertex.TexCoords = vec;
 		}
 		else
-			vertex.TexCoords = glm::vec2(0.0f, 0.0f);
+		vertex.TexCoords = glm::vec2(0.0f, 0.0f);
 
 		vertices.push_back(vertex);
 	}
@@ -185,8 +132,6 @@ std::vector<GLuint> Model::loadMaterialTextures(aiMaterial* mat)
 GLuint Model::loadTexture(std::string filePath)
 {
 	GLuint textureHandle = 0;
-	filePath.insert(0, std::string("../Textures/"));
-	//std::cout << filePath << std::endl;
 	auto bitMap = FreeImage_Load(FIF_PNG, filePath.c_str());
 
 	if (bitMap == nullptr)
@@ -197,15 +142,7 @@ GLuint Model::loadTexture(std::string filePath)
 	glGenTextures(1, &textureHandle);
 	glBindTexture(GL_TEXTURE_2D, textureHandle);
 
-	//if no alpha bits < 32 (24)
-	int a = 0;
-	if ((a=FreeImage_GetBPP(bitMap)) < 32){
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, FreeImage_GetWidth(bitMap), FreeImage_GetHeight(bitMap), 0, GL_BGR, GL_UNSIGNED_BYTE, FreeImage_GetBits(bitMap));
-	}
-	//else tex has alpha
-	else{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, FreeImage_GetWidth(bitMap), FreeImage_GetHeight(bitMap), 0, GL_BGRA, GL_UNSIGNED_BYTE, FreeImage_GetBits(bitMap));
-	}
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, FreeImage_GetWidth(bitMap), FreeImage_GetHeight(bitMap), 0, GL_BGRA, GL_UNSIGNED_BYTE, FreeImage_GetBits(bitMap));
 	FreeImage_Unload(bitMap);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
