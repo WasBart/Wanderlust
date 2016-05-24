@@ -27,11 +27,12 @@ struct Vertex {
 		std::vector<Vertex> vertices;
 		std::vector<GLuint> indices;
 		std::vector<GLuint> textures;
-		/*  Functions  */
+	
 		Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, std::vector<GLuint> textures);
 		void draw(cgue::Shader* shader);
-		void update(float time_delta, glm::mat4 operation);
+		void update(glm::mat4 operation);
 		glm::mat4 modelMatrix;
+		glm::mat4 viewMatrix;
 		
 		
 	private:

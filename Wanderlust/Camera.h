@@ -1,18 +1,24 @@
 #include <glew/glew.h> 
-
+#include <glm\glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 class Camera
 {
 
 public:
 
-	Camera(GLdouble _eyeX, GLdouble _eyeY, GLdouble _eyeZ);
-	void setUp(GLdouble centerX, GLdouble centerY, GLdouble centerZ);
-	void update(GLdouble centerX, GLdouble centerY, GLdouble centerZ);
+	Camera(GLfloat _eyeX, GLfloat _eyeY, GLfloat _eyeZ);
+	glm::mat4 setUp(glm::vec3 & center);
+	glm::mat4 update(glm::vec3 & eye, glm::vec3 & center);
+	glm::mat4 Camera::useUp(glm::vec3 & eye, glm::vec3 & center, glm::vec3 & up);
 
+	GLfloat eyeX;
+	GLfloat eyeY;
+	GLfloat eyeZ;
+
+	glm::vec3 up;
 private:
 	
-	GLdouble eyeX;
-	GLdouble eyeY;
-	GLdouble eyeZ;
+	
 };

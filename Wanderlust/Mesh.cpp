@@ -20,17 +20,20 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, std::vecto
 
 	this->setupMesh();
 };
-/*
-Drawing Mesh
-*/
+
 void Mesh::draw(cgue::Shader* shader){
 	// Binding textures
-	glActiveTexture(GL_TEXTURE0); 
-	//glUniform1i(glGetUniformLocation(shader->programHandle, "TODO"), i);
-	glBindTexture(GL_TEXTURE_2D, this->textures[0]);
 
+	if (textures.size() > 0){
+		glActiveTexture(GL_TEXTURE0);
+		//if more than one texture is used (spec, normal..)
+		//glUniform1i(glGetUniformLocation(shader->programHandle, "TODO"), i);
+		glBindTexture(GL_TEXTURE_2D, this->textures[0]);
+	}
 	// Drawing mesh
 	glUniformMatrix4fv(4, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+	glUniformMatrix4fv(5, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+	
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
@@ -39,26 +42,22 @@ void Mesh::draw(cgue::Shader* shader){
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void Mesh::update(float time_delta, glm::mat4 operation){
-
+void Mesh::update(glm::mat4 operation){
 	modelMatrix = operation;
-	glUniformMatrix4fv(4, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 }
-/*
-Setting up VAO, VBO, and EBO
-*/
+
 void Mesh::setupMesh()
 {
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
 
-	// Loading data into vertex buffers
-	glGenBuffers(1, &VBO); //positionBuffer in Cube
+	//setting up vertex buffers
+	glGenBuffers(1, &VBO); 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
 
-
-	glGenBuffers(1, &EBO); //indexBuffer in Cube
+	//setting up index buffer
+	glGenBuffers(1, &EBO); 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), &indices[0], GL_STATIC_DRAW);
 
@@ -78,3 +77,4 @@ void Mesh::setupMesh()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
+

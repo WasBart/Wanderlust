@@ -30,6 +30,9 @@
     <ClCompile Include="Model.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="shader.h">
@@ -41,12 +44,24 @@
     <ClInclude Include="Model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Shader\basic.frag">
       <Filter>Shader</Filter>
     </None>
     <None Include="..\Shader\basic.vert">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="..\Shader\sun.frag">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="..\Shader\toon.frag">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="..\Shader\toon2.frag">
       <Filter>Shader</Filter>
     </None>
   </ItemGroup>
