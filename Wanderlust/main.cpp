@@ -16,6 +16,8 @@
 #pragma comment(lib, "PhysX3CommonDEBUG_x86.lib")
 #pragma comment(lib, "PhysX3ExtensionsDEBUG.lib")
 #pragma comment(lib, "PhysX3CharacterKinematicDEBUG_x86.lib")
+#pragma comment(lib, "PhysX3GpuDEBUG_x86.lib")
+
 #else
 #pragma comment(lib, "PhysX3_x86.lib")
 #pragma comment(lib, "PhysX3Common_x86.lib")
@@ -83,6 +85,8 @@ glm::mat4 persp;
 glm::mat4 view;
 glm::vec3 cameraPos;
 glm::vec3 direction = glm::vec3(0.0,0.0,-1.0);
+const glm::vec3 camInitial = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 camDirection = camInitial;
 float width;
 float height;
 float rad = 0.0f;
@@ -219,7 +223,6 @@ int main(int argc, char** argv){
 
 	init(window);
 	initPhysX();
-	
 
 	//Creating scene
 	physx::PxSceneDesc sceneDesc(gPhysicsSDK->getTolerancesScale());
@@ -258,9 +261,9 @@ int main(int argc, char** argv){
 	//create Player
 
 
-	int playerWidth = abs(player->maxVector.x) + abs(player->minVector.x);
-	int playerBreadth = abs(player->maxVector.z) + abs(player->minVector.z);
-	int playerHeight = abs(player->maxVector.y) + abs(player->minVector.y); 
+	int playerWidth = abs(player->maxVector.x - player->minVector.x);
+	int playerBreadth = abs(player->maxVector.z - player->minVector.z);
+	int playerHeight = abs(player->maxVector.y - player->minVector.y); 
 
 	std::cout << playerWidth << std::endl;
 	std::cout << playerBreadth << std::endl;
@@ -271,7 +274,7 @@ int main(int argc, char** argv){
 	characterControllerDesc.slopeLimit = 0.5f;
 	characterControllerDesc.stepOffset = 0.01f;
 	characterControllerDesc.climbingMode = physx::PxCapsuleClimbingMode::eCONSTRAINED;
-	characterControllerDesc.position = physx::PxExtendedVec3(0, 0, 0);
+	characterControllerDesc.position = physx::PxExtendedVec3(player->center.x, player->center.y, player->center.z);
 	characterControllerDesc.contactOffset = 0.05f;
 	characterControllerDesc.upDirection = physx::PxVec3(0, 1, 0);
 	characterControllerDesc.material = mMaterial;
@@ -290,14 +293,25 @@ int main(int argc, char** argv){
 		std::cout << "error" << std::endl;
 	}
 
+	glm::vec3 pos, eye;
+	pos.x = characterController->getPosition().x;
+	pos.y = characterController->getPosition().y;
+	pos.z = characterController->getPosition().z;
+	eye = pos - camDirection * 10.0f;
+	view = cam->update(eye, pos);
 	cameraController->setPosition(physx::PxExtendedVec3(cam->eyeX, cam->eyeY, cam->eyeZ));
 
 	PX_ASSERT(c);
-	player->position.x = characterController->getPosition().x;
-	player->position.y = characterController->getPosition().y;
-	player->position.z = characterController->getPosition().z;
+	player->position.x = characterController->getFootPosition().x;
+	player->position.y = characterController->getFootPosition().y;
+	player->position.z = characterController->getFootPosition().z;
+
+	player->center.x = characterController->getPosition().x;
+	player->center.y = characterController->getPosition().y;
+	player->center.z = characterController->getPosition().z;
 
 	
+
 	glClearColor(0.35f, 0.36f, 0.43f, 0.3f);
 	glViewport(0, 0, width, height);
 	
@@ -447,11 +461,12 @@ int main(int argc, char** argv){
 			glm::vec4 oldDirection = glm::vec4(-1.0, 0.0, 0.0, 1.0);
 			auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
 			glm::vec4 newDirection = t1 * oldDirection;
-			glm::vec3 pos = glm::vec3(characterController->getPosition().x,characterController->getPosition().y, characterController->getPosition().z);
-			characterController->move(physx::PxVec3(0.1f*newDirection.x, 0, 0.1f*newDirection.z), 0.0, time_delta, filters);
+			//glm::vec3 deltaPos = glm::vec3(characterController->getPosition().x,characterController->getPosition().y, characterController->getPosition().z);
+			characterController->move(physx::PxVec3(0.01f*newDirection.x, 0, 0.01f*newDirection.z), 0.0, time_delta, filters);
 			//cameraController->move(physx::PxVec3(0.01f*newDirection.x, 0, 0), 0.0, time_delta, filters);
-			pos = glm::abs(pos-glm::vec3(characterController->getPosition().x, characterController->getPosition().y, characterController->getPosition().z));
+			//deltaPos = glm::abs(deltaPos-glm::vec3(characterController->getPosition().x, characterController->getPosition().y, characterController->getPosition().z));
 			player->position.x = characterController->getFootPosition().x;
+			player->position.y = characterController->getFootPosition().y;
 			player->position.z = characterController->getFootPosition().z;
 			
 			player->center.x = characterController->getPosition().x;
@@ -460,10 +475,14 @@ int main(int argc, char** argv){
 		
 			player->angle = glm::radians(-yaw + 90);
 			
-			cam->eyeX += newDirection.x*pos.x;
-			cam->eyeY += newDirection.y*pos.y;
-			cam->eyeZ += newDirection.z*pos.z;
+			/*cam->eyeX += deltaPos.x;
+			cam->eyeY += deltaPos.y;
+			cam->eyeZ += deltaPos.z;*/
 			//cam->eyeX = player->position.x;
+			glm::vec3 camPos = player->center - camDirection * 10.0f;
+			cam->eyeX = camPos.x;
+			cam->eyeY = camPos.y;
+			cam->eyeZ = camPos.z;
 
 			view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
 			
@@ -533,10 +552,10 @@ int main(int argc, char** argv){
 			glm::vec4 oldDirection = glm::vec4(direction.x, direction.y, direction.z, 1.0);
 			glm::vec4 newDirection = t1 * oldDirection;
 
-			glm::vec3 pos = glm::vec3(characterController->getPosition().x, characterController->getPosition().y, characterController->getPosition().z);
-			characterController->move(physx::PxVec3(0.1f*newDirection.x, 0, 0.1f*newDirection.z), 0.0, time_delta, filters);
+			glm::vec3 deltaPos = glm::vec3(characterController->getPosition().x, characterController->getPosition().y, characterController->getPosition().z);
+			characterController->move(physx::PxVec3(0.01f*newDirection.x, 0, 0.01f*newDirection.z), 0.0, time_delta, filters);
 
-			pos = glm::abs(pos - glm::vec3(characterController->getPosition().x, characterController->getPosition().y, characterController->getPosition().z));
+			deltaPos = glm::abs(deltaPos - glm::vec3(characterController->getPosition().x, characterController->getPosition().y, characterController->getPosition().z));
 			player->position.z = characterController->getFootPosition().z;
 			player->position.x = characterController->getFootPosition().x;
 
@@ -544,8 +563,9 @@ int main(int argc, char** argv){
 			player->center.y = characterController->getPosition().y;
 			player->center.z = characterController->getPosition().z;
 
-			cam->eyeX += newDirection.x*pos.x;
-			cam->eyeZ += newDirection.z*pos.z;
+			cam->eyeX += deltaPos.x;
+			//cam->eyeY += deltaPos.y;
+			cam->eyeZ += deltaPos.z;
 
 			view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
 
@@ -606,6 +626,15 @@ void initPhysX(){
 	if (gPhysicsSDK == NULL){
 		std::cerr << "Error creating PhysX3 device, Exiting" << std::endl;
 	}
+
+	physx::PxVisualDebuggerConnectionManager* pvd = gPhysicsSDK->getPvdConnectionManager();
+	if (!pvd)
+		return;
+	physx::PxVisualDebuggerConnectionFlags theConnectionFlags(physx::PxVisualDebuggerConnectionFlag::eDEBUG |
+	physx::PxVisualDebuggerConnectionFlag::ePROFILE | physx::PxVisualDebuggerConnectionFlag::eMEMORY);
+	physx::PxVisualDebuggerExt::createConnection(pvd, "localhost", 5425, 10000, theConnectionFlags);
+
+	gPhysicsSDK->getVisualDebugger()->setVisualizeConstraints(true);
 }
 
 void init(GLFWwindow* window)
@@ -617,7 +646,7 @@ void init(GLFWwindow* window)
 		"../Shader/toon2.frag");
 
 	//cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
-	cam = std::make_unique<Camera>(0.0f, 5.0f, 8.0f);
+	cam = std::make_unique<Camera>(0.0f, 0.0f, 0.0f);
 	player = std::make_unique<Model>("../Models/player.dae");
 	plattform = std::make_unique<Model>("../Models/plattform.dae");
 	plattform2 = std::make_unique<Model>("../Models/plattform.dae");
@@ -630,7 +659,7 @@ void init(GLFWwindow* window)
 	glm::mat4 projection;
 	player->position = glm::vec3(0, 0, 0);
 	player->update();
-	//view = cam->setUp(player->center);
+	view = cam->setUp(player->center);
 
 	projection = glm::perspective(glm::radians(60.0f), width / height, 0.1f, 100.0f);
 	player->viewMatrix = view;
@@ -823,8 +852,14 @@ void mouseMovementPoll(GLFWwindow* window, double xpos, double ypos)
 	auto t3 = glm::translate(glm::mat4(), player->center);
 	auto t4 = t3 * t2 * t1;
 
+	camDirection = (t2 * t1 * glm::vec4(camInitial, 1)).xyz;
+
 	camUp = t2 * t1 * glm::vec4(0, 1, 0, 1);
-	glm::vec4 eye = t4 * glm::vec4(0.0f, 5.0f, 8.0f, 1.0f);
+	/*glm::vec4 eye = t4 * glm::vec4(0.0f, 5.0f, 8.0f, 1.0f);
+	cam->eyeX = eye.x;
+	cam->eyeY = eye.y;
+	cam->eyeZ = eye.z;*/
+	glm::vec3 eye = player->center - camDirection * 10.0f;
 	cam->eyeX = eye.x;
 	cam->eyeY = eye.y;
 	cam->eyeZ = eye.z;
