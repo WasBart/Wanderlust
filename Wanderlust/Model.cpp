@@ -184,7 +184,7 @@ std::vector<GLuint> Model::loadMaterialTextures(aiMaterial* mat)
 
 GLuint Model::loadTexture(std::string filePath)
 {
-	GLuint textureHandle = 0;
+	GLuint textureHandle;
 	filePath.insert(0, std::string("../Textures/"));
 	//std::cout << filePath << std::endl;
 	auto bitMap = FreeImage_Load(FIF_PNG, filePath.c_str());

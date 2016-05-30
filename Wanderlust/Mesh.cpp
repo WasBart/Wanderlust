@@ -25,9 +25,9 @@ void Mesh::draw(cgue::Shader* shader){
 	// Binding textures
 
 	if (textures.size() > 0){
-		glActiveTexture(GL_TEXTURE0);
+		glActiveTexture(GL_TEXTURE1);
 		//if more than one texture is used (spec, normal..)
-		//glUniform1i(glGetUniformLocation(shader->programHandle, "TODO"), i);
+		glUniform1i(glGetUniformLocation(shader->programHandle, "tex"), 1);
 		glBindTexture(GL_TEXTURE_2D, this->textures[0]);
 	}
 	// Drawing mesh

@@ -86,6 +86,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\Shader\test.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
@@ -101,6 +102,10 @@
   <ItemGroup>
     <None Include="..\Shader\basic.frag" />
     <None Include="..\Shader\basic.vert" />
+    <None Include="..\Shader\debugDepthQuad.frag" />
+    <None Include="..\Shader\debugDepthQuad.vert" />
+    <None Include="..\Shader\shadowMapShader.fragment" />
+    <None Include="..\Shader\shadowMapShader.vert" />
     <None Include="..\Shader\sun.frag" />
     <None Include="..\Shader\toon.frag" />
     <None Include="..\Shader\toon2.frag" />

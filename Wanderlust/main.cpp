@@ -50,7 +50,7 @@ static physx::PxDefaultAllocator gDefaultAllocatorCallback;
 static physx::PxFoundation* gFoundation = NULL;
 static physx::PxPhysics* gPhysicsSDK = NULL;
 physx::PxScene* gScene = NULL;
-physx::PxReal myTimeStep = 1.0f / 60.0f;
+
 physx::PxControllerManager* manager;
 physx::PxCapsuleControllerDesc characterControllerDesc;
 physx::PxController* characterController;
@@ -64,15 +64,21 @@ void initPhysX();
 void StepPhysX();
 void update(float time_delta);
 void mouseMovementPoll(GLFWwindow* window, double xpos, double ypos);
+void keyboardInput(GLFWwindow*);
+void renderShadowMap();
+void RenderQuad();
+void RenderScene(Shader* shader);
+void RenderCube();
 
+GLuint planeVAO;
+
+std::unique_ptr<Shader> shader;
+std::unique_ptr<Shader> shadowMapShader;
+std::unique_ptr<Shader> toonShader;
+std::unique_ptr<Shader> debugDepthQuad;
 
 
 std::unique_ptr<Camera> cam;
-
-std::unique_ptr<Shader> shader;
-std::unique_ptr<Shader> toonShader;
-
-
 std::unique_ptr<Model> player;
 std::unique_ptr<Model> plattform;
 std::unique_ptr<Model> plattform2;
@@ -83,20 +89,27 @@ std::unique_ptr<Model> path3;
 
 glm::mat4 persp;
 glm::mat4 view;
-glm::vec3 cameraPos;
+glm::mat4 projection;
+glm::vec3 camPos;
 glm::vec3 direction = glm::vec3(0.0,0.0,-1.0);
 const glm::vec3 camInitial = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 camDirection = camInitial;
 float width;
 float height;
 float rad = 0.0f;
+float time_delta;
 
+GLfloat near_plane = 0.1f, far_plane = 100.0f;
+physx::PxReal myTimeStep = 1.0f / 60.0f;
 
 GLfloat lastX = 400, lastY = 300;
 GLfloat yaw = 0.0f;
 GLfloat pitch = 0.0f;
+GLuint depthMap;
 glm::vec4 camUp = glm::vec4(0.0f,1.0f,0.0f,1.0f);
 
+// Light source
+glm::vec3 lightPos(-2.0f, 8.0f, -1.0f);
 
 
 int main(int argc, char** argv){
@@ -224,6 +237,33 @@ int main(int argc, char** argv){
 	init(window);
 	initPhysX();
 
+	  GLfloat planeVertices[] = {
+        // Positions          // Normals         // Texture Coords
+        25.0f, -0.5f, 25.0f, 0.0f, 1.0f, 0.0f, 25.0f, 0.0f,
+        -25.0f, -0.5f, -25.0f, 0.0f, 1.0f, 0.0f, 0.0f, 25.0f,
+        -25.0f, -0.5f, 25.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+
+        25.0f, -0.5f, 25.0f, 0.0f, 1.0f, 0.0f, 25.0f, 0.0f,
+        25.0f, -0.5f, -25.0f, 0.0f, 1.0f, 0.0f, 25.0f, 25.0f,
+        - 25.0f, -0.5f, -25.0f, 0.0f, 1.0f, 0.0f, 0.0f, 25.0f
+    };
+
+	GLuint planeVBO;
+	glGenVertexArrays(1, &planeVAO);
+	glGenBuffers(1, &planeVBO);
+	glBindVertexArray(planeVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), &planeVertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+	glBindVertexArray(0);
+
+
+
 	//Creating scene
 	physx::PxSceneDesc sceneDesc(gPhysicsSDK->getTolerancesScale());
 
@@ -301,7 +341,7 @@ int main(int argc, char** argv){
 	view = cam->update(eye, pos);
 	cameraController->setPosition(physx::PxExtendedVec3(cam->eyeX, cam->eyeY, cam->eyeZ));
 
-	PX_ASSERT(c);
+
 	player->position.x = characterController->getFootPosition().x;
 	player->position.y = characterController->getFootPosition().y;
 	player->position.z = characterController->getFootPosition().z;
@@ -318,30 +358,91 @@ int main(int argc, char** argv){
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
+	
+	GLuint depthMapFBO;
+	const GLuint SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+	glGenFramebuffers(1, &depthMapFBO);
+
+	glGenTextures(1, &depthMap);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
+		SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	
+
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	
+
 	auto time = glfwGetTime();
 	while (!glfwWindowShouldClose(window))
 	{
 
 		auto time_new = glfwGetTime();
-		auto time_delta = (float)(time_new - time);
+		time_delta = (float)(time_new - time);
+		
 		time = time_new;
-
-		
-		
-			if (gScene){
+		if (gScene){
 				StepPhysX();
-			}
-			physx::PxVec3 p = gBox->getGlobalPose().p;
-			//std::cout << "Box current Position (" << boxPos.x << " " << boxPos.y << " " << boxPos.z<< ") " << std::endl;
+		}
 		
-
 		
 		/*std::cout << "frametime:" << time_delta * 1000 << "ms"
 			<< " =~" << 1.0 / time_delta << "fps" << std::endl;*/
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		//ShadowMap
+		glm::mat4 lightProjection, lightView;
+		glm::mat4 lightSpaceMatrix;
+
+		lightProjection = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, 0.01f, 50.0f);
+		lightView = glm::lookAt(lightPos, glm::vec3(0), glm::vec3(0.0, 1.0, 0.0));
+		lightSpaceMatrix = lightProjection * lightView;
+		
+		// shadowMapRender
+		shadowMapShader->useShader();
+		glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		renderShadowMap();
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		
+	
+		// Normal Renderpass
+		glViewport(0, 0, width, height);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
+		shader->useShader();
+		
+		glUniformMatrix4fv(glGetUniformLocation(shader->programHandle, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, depthMap);
+		draw();
+		
+		//DepthmapRender 
+		
+		/*debugDepthQuad->useShader();
+	
+		glUniform1f(glGetUniformLocation(debugDepthQuad->programHandle, "near_plane"), near_plane);
+		glUniform1f(glGetUniformLocation(debugDepthQuad->programHandle, "far_plane"), far_plane);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, depthMap);
+		RenderQuad();*/
+		
+
+
 		rad += (glm::pi<float>() / 180.0f) * 20 * time_delta;
-		plattform->position = glm::vec3(5, 0, sin(rad) * 10.0f);
+	    plattform->position = glm::vec3(5, 0, sin(rad) * 10.0f);
 		
 		
 		plattform2->angle = 2*rad;
@@ -349,89 +450,10 @@ int main(int argc, char** argv){
 		
 		int pathWidth = abs(path->minVector.x) + abs(path->maxVector.x);
 		int pathBreadth = abs(path->minVector.z) + abs(path->maxVector.z);
+		
+		//draw();
 
-		int msgboxID;
-		/*
-		if ((player->position.z - playerBreadth / 2.0f <= path->position.z) &&
-			player->position.z + playerBreadth / 2.0f >= path->position.z - pathBreadth){
-
-			if (player->position.x + playerWidth / 2.0f  < path->position.x - pathWidth / 2.0f ||
-				player->position.x - playerWidth / 2.0f > path->position.x + pathWidth / 2.0f){
-				msgboxID = MessageBox(
-					NULL,
-					L"You lost.\nTry again?",
-					L"Don't give up!",
-					MB_ICONINFORMATION | MB_YESNO
-					);
-
-				if (msgboxID == IDYES)
-				{
-					init(window);
-				}
-				else{
-					glfwSetWindowShouldClose(window, true);
-				}
-			}
-		}
-		else if ((player->position.z - playerBreadth / 2.0f <= path2->position.z) &&
-			player->position.z + playerBreadth / 2.0f >= path2->position.z - pathBreadth){
-
-			if (player->position.x + playerWidth / 2.0f< path2->position.x - pathWidth / 8.0f ||
-				player->position.x - playerWidth / 2.0f> path2->position.x + pathWidth / 8.0f){
-				msgboxID = MessageBox(
-					NULL,
-					L"You lost.\nTry again?",
-					L"Don't give up!",
-					MB_ICONINFORMATION | MB_YESNO
-					);
-
-				if (msgboxID == IDYES)
-				{
-					init(window);
-				}
-				else{
-					glfwSetWindowShouldClose(window, true);
-				}
-			}
-
-		}
-		else if ((player->position.z - playerBreadth / 2.0f <= path3->position.z) &&
-			player->position.z + playerBreadth / 2.0f >= path3->position.z - pathBreadth / 5.0f){
-			msgboxID = MessageBox(
-				NULL,
-				L"You won!\nHow 'bout another round?",
-				L"Congratulations!",
-				MB_ICONINFORMATION | MB_YESNO
-				);
-
-			if (msgboxID == IDYES)
-			{
-				init(window);
-			}
-			else{
-			glfwSetWindowShouldClose(window, true);
-			}
-		}
-		else{
-			msgboxID = MessageBox(
-				NULL,
-				L"You lost.\nTry again?",
-				L"Don't give up!",
-				MB_ICONINFORMATION | MB_YESNO
-				);
-
-			if (msgboxID == IDYES)
-			{
-				init(window);
-			}
-			else{
-				glfwSetWindowShouldClose(window, true);
-			}
-		}
-		*/
-		draw();
-
-		const physx::PxControllerFilters filters(NULL, NULL, NULL);
+	
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -446,168 +468,8 @@ int main(int argc, char** argv){
 			mouseMovementPoll(window, xpos, ypos);
 		}
 
-		if (glfwGetKey(window, GLFW_KEY_ESCAPE))
-		{
-			glfwSetWindowShouldClose(window, true);
-		}
+		keyboardInput(window);
 		
-		if (glfwGetKey(window, GLFW_KEY_F1))
-		{
-			glTranslatef(0.0f, 0.0f, 0.0f);
-		}
-
-		if (glfwGetKey(window, GLFW_KEY_A)){
-			
-			glm::vec4 oldDirection = glm::vec4(-1.0, 0.0, 0.0, 1.0);
-			auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
-			glm::vec4 newDirection = t1 * oldDirection;
-			//glm::vec3 deltaPos = glm::vec3(characterController->getPosition().x,characterController->getPosition().y, characterController->getPosition().z);
-			characterController->move(physx::PxVec3(0.01f*newDirection.x, 0, 0.01f*newDirection.z), 0.0, time_delta, filters);
-			//cameraController->move(physx::PxVec3(0.01f*newDirection.x, 0, 0), 0.0, time_delta, filters);
-			//deltaPos = glm::abs(deltaPos-glm::vec3(characterController->getPosition().x, characterController->getPosition().y, characterController->getPosition().z));
-			player->position.x = characterController->getFootPosition().x;
-			player->position.y = characterController->getFootPosition().y;
-			player->position.z = characterController->getFootPosition().z;
-			
-			player->center.x = characterController->getPosition().x;
-			player->center.y = characterController->getPosition().y;
-			player->center.z = characterController->getPosition().z;
-		
-			player->angle = glm::radians(-yaw + 90);
-			
-			/*cam->eyeX += deltaPos.x;
-			cam->eyeY += deltaPos.y;
-			cam->eyeZ += deltaPos.z;*/
-			//cam->eyeX = player->position.x;
-			glm::vec3 camPos = player->center - camDirection * 10.0f;
-			cam->eyeX = camPos.x;
-			cam->eyeY = camPos.y;
-			cam->eyeZ = camPos.z;
-
-			view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
-			
-			/*player->position.x -= 10 * time_delta;
-			
-			player->angle = glm::radians(-yaw + 90);
-			
-			
-
-			
-
-			player->position.x += newDirection.x * time_delta * 10;
-			player->position.z += newDirection.z * time_delta * 10;
-
-			player->center.x += newDirection.x * time_delta * 10;
-			player->center.z += newDirection.z * time_delta * 10;
-			player->update();
-
-			*/
-		}
-		else if (glfwGetKey(window, GLFW_KEY_D))
-		{
-			auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
-			glm::vec4 oldDirection = glm::vec4(1.0, 0.0, 0.0, 1.0);
-			glm::vec4 newDirection = t1 * oldDirection;
-			
-			player->angle = glm::radians(-yaw - 90);
-			
-			glm::vec3 pos = glm::vec3(characterController->getPosition().x, characterController->getPosition().y, characterController->getPosition().z);
-			characterController->move(physx::PxVec3(0.1f*newDirection.x, 0, 0.1f*newDirection.z), 0.0, time_delta, filters);
-			
-			pos = glm::abs(pos - glm::vec3(characterController->getPosition().x, characterController->getPosition().y, characterController->getPosition().z));
-			player->position.x = characterController->getFootPosition().x;
-
-			player->center.x = characterController->getPosition().x;
-			player->center.y = characterController->getPosition().y;
-			player->center.z = characterController->getPosition().z;
-
-			cam->eyeX += newDirection.x*pos.x;
-			cam->eyeZ += newDirection.z*pos.z;
-			//cam->eyeX = player->position.x;
-
-			view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
-
-			//player->position.x += 10* time_delta;
-			//player->center.x += 10 * time_delta;
-			/*player->angle = glm::radians(-yaw - 90);
-			auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
-			glm::vec4 oldDirection = glm::vec4(1.0, 0.0, 0.0, 1.0);
-			glm::vec4 newDirection = t1 * oldDirection;
-
-			player->position.x += newDirection.x * time_delta * 10;
-			player->position.z += newDirection.z * time_delta * 10;
-
-			player->center.x += newDirection.x * time_delta * 10;
-			player->center.z += newDirection.z * time_delta * 10;
-			player->update();
-
-			view = cam->update(glm::vec3(cam->eyeX += newDirection.x * time_delta * 10, cam->eyeY, cam->eyeZ += newDirection.z * time_delta * 10), player->center);*/
-	
-		}
-
-		if (glfwGetKey(window, GLFW_KEY_W))
-		{
-
-			auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
-			glm::vec4 oldDirection = glm::vec4(direction.x, direction.y, direction.z, 1.0);
-			glm::vec4 newDirection = t1 * oldDirection;
-
-			glm::vec3 deltaPos = glm::vec3(characterController->getPosition().x, characterController->getPosition().y, characterController->getPosition().z);
-			characterController->move(physx::PxVec3(0.01f*newDirection.x, 0, 0.01f*newDirection.z), 0.0, time_delta, filters);
-
-			deltaPos = glm::abs(deltaPos - glm::vec3(characterController->getPosition().x, characterController->getPosition().y, characterController->getPosition().z));
-			player->position.z = characterController->getFootPosition().z;
-			player->position.x = characterController->getFootPosition().x;
-
-			player->center.x = characterController->getPosition().x;
-			player->center.y = characterController->getPosition().y;
-			player->center.z = characterController->getPosition().z;
-
-			cam->eyeX += deltaPos.x;
-			//cam->eyeY += deltaPos.y;
-			cam->eyeZ += deltaPos.z;
-
-			view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
-
-			//player->position.z -= 10 * time_delta;
-			//player->center.z -= 10 * time_delta;
-			/*player->angle = glm::radians(-yaw);
-			auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
-			glm::vec4 oldDirection = glm::vec4(direction.x, direction.y, direction.z, 1.0);
-			glm::vec4 newDirection = t1 * oldDirection;
-
-			
-			player->position.x += newDirection.x * time_delta * 10;
-			player->position.z += newDirection.z * time_delta * 10;
-
-			player->center.x += newDirection.x * time_delta * 10;
-			player->center.z += newDirection.z * time_delta * 10;
-			player->update();
-
-			view = cam->update(glm::vec3(cam->eyeX += newDirection.x * time_delta * 10, cam->eyeY, cam->eyeZ += newDirection.z * time_delta * 10), player->center);
-			GLint model_view = glGetUniformLocation(shader->programHandle, "view");
-			glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));*/
-		}
-		else if (glfwGetKey(window, GLFW_KEY_S))
-		{
-			//player->position.z += 10 * time_delta;
-			//player->center.z += 10 * time_delta;
-			player->angle = glm::radians(-yaw + 180);
-			auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
-			glm::vec4 oldDirection = glm::vec4(direction.x * -1.0, direction.y * -1.0, direction.z * -1.0, 1.0);
-			glm::vec4 newDirection = t1 * oldDirection;
-
-			player->position.x += newDirection.x * time_delta * 10;
-			player->position.z += newDirection.z * time_delta * 10;
-
-			player->center.x += newDirection.x * time_delta * 10;
-			player->center.z += newDirection.z * time_delta * 10;
-			player->update();
-
-			view = cam->update(glm::vec3(cam->eyeX += newDirection.x * time_delta * 10, cam->eyeY, cam->eyeZ += newDirection.z * time_delta * 10), player->center);
-			GLint model_view = glGetUniformLocation(shader->programHandle, "view");
-			glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
-		}
 	}
 
 	cleanup();
@@ -615,6 +477,35 @@ int main(int argc, char** argv){
 	glfwTerminate();
 
 	return EXIT_SUCCESS;
+}
+
+GLuint quadVAO = 0;
+GLuint quadVBO;
+void RenderQuad()
+{
+	if (quadVAO == 0)
+	{
+		GLfloat quadVertices[] = {
+			// Positions        // Texture Coords
+			-1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+			1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+			1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+		};
+		// Setup plane VAO
+		glGenVertexArrays(1, &quadVAO);
+		glGenBuffers(1, &quadVBO);
+		glBindVertexArray(quadVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	}
+	glBindVertexArray(quadVAO);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glBindVertexArray(0);
 }
 
 void initPhysX(){
@@ -643,47 +534,53 @@ void init(GLFWwindow* window)
 	shader = std::make_unique<Shader>("../Shader/basic.vert",
 		"../Shader/basic.frag");
 	toonShader = std::make_unique<Shader>("../Shader/basic.vert",
-		"../Shader/toon2.frag");
+		"../Shader/basic.frag");
+	shadowMapShader = std::make_unique<Shader>("../Shader/shadowMapShader.vert",
+		"../Shader/shadowMapShader.fragment");
+	debugDepthQuad = std::make_unique<Shader>("../Shader/debugDepthQuad.vert", "../Shader/debugDepthQuad.frag");
+	
+
 
 	//cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
 	cam = std::make_unique<Camera>(0.0f, 0.0f, 0.0f);
 	player = std::make_unique<Model>("../Models/player.dae");
 	plattform = std::make_unique<Model>("../Models/plattform.dae");
 	plattform2 = std::make_unique<Model>("../Models/plattform.dae");
-	sphere = std::make_unique<Model>("../Models/sphere.dae");
+	//sphere = std::make_unique<Model>("../Models/sphere.dae");
 	path = std::make_unique<Model>("../Models/path.dae");
 	path2 = std::make_unique<Model>("../Models/path.dae");
 	path3 = std::make_unique<Model>("../Models/path.dae");
 
 	
-	glm::mat4 projection;
+
 	player->position = glm::vec3(0, 0, 0);
 	player->update();
 	view = cam->setUp(player->center);
 
-	projection = glm::perspective(glm::radians(60.0f), width / height, 0.1f, 100.0f);
+	projection = glm::perspective(glm::radians(60.0f), width / height, near_plane, far_plane);
 	player->viewMatrix = view;
 	path->viewMatrix = view;
-	path->position = glm::vec3(0, -1.0f, 1.0f);
-	path->update();
-
+	path->position = glm::vec3(0, -1.0f, 5.0f);
+	path->scale = glm::vec3(10.0f, 1.0f, 10.0f);
+	
+	path2->viewMatrix = view;
 	path2->position = glm::vec3(-1.0f, -1.0f, path->position.z - abs(path->minVector.z) + abs(path->maxVector.z));
 	path2->scale = glm::vec3(0.25f, 1.0f, 1.0f);
-	path2->update();
 
+	path2->viewMatrix = view;
 	path3->position = glm::vec3(-0.7f, -1.0f, path2->position.z - abs(path->minVector.z) + abs(path->maxVector.z));
 	path3->scale = glm::vec3(1.0f, 1.0f, 0.2f);
-	path3->update();
+
 
 	player->position = glm::vec3(0, 0, 0);
 	player->update();
 	plattform->position = glm::vec3(5.0f, -1.0f, 0);
 	plattform->viewMatrix = view;
-	plattform->update();
+
 
 	plattform2->position = glm::vec3(-5.0f, 3.0f, 0);
 	plattform2->viewMatrix = view;
-	plattform2->update();
+
 
 	
 
@@ -709,21 +606,21 @@ void init(GLFWwindow* window)
 	glUniform1f(matShinePos, 40.0f);
 
 
-	//Setting LightProperties
+	//Setting LightPropertiesl
 
 	GLint lightAmbientPos = glGetUniformLocation(shader->programHandle, "light.ambient");
 	GLint lightDiffusePos = glGetUniformLocation(shader->programHandle, "light.diffuse");
 	GLint lightSpecularPos = glGetUniformLocation(shader->programHandle, "light.specular");
 	GLint lightDirectionPos = glGetUniformLocation(shader->programHandle, "light.direction");
 
-	glUniform3f(lightDirectionPos, -1.0f, -1.0f, -1.0f);
+	glUniform3f(lightDirectionPos, lightPos.x, lightPos.y, lightPos.z);
 	glUniform3f(lightAmbientPos, 0.5f, 0.5f, 0.5f);
 	glUniform3f(lightDiffusePos, 1.0f, 1.0f, 1.0f);
-	glUniform3f(lightSpecularPos, 1.0f, 1.0f, 1.0f);
+	glUniform3f(lightSpecularPos, 0.0f, 0.0f, 0.0f);
 	glm::vec3 spherePos(-5.0f, 5.0f, -10.0f);
-	sphere->position = spherePos;
+	/*sphere->position = spherePos;
 	sphere->viewMatrix = view;
-	sphere->update();
+	sphere->update();*/
 
 	//Basic Shader
 	shader->useShader();
@@ -754,12 +651,12 @@ void init(GLFWwindow* window)
 	lightSpecularPos = glGetUniformLocation(shader->programHandle, "light.specular");
     lightDirectionPos = glGetUniformLocation(shader->programHandle, "light.direction");
 
-	glUniform3f(lightDirectionPos, -1.0f, -1.0f, -1.0f);
+	glUniform3f(lightDirectionPos, lightPos.x, lightPos.y, lightPos.z);
 	glUniform3f(lightAmbientPos, 0.2f, 0.2f, 0.2f);
 	glUniform3f(lightDiffusePos, 1.0f, 1.0f, 1.0f);
-	glUniform3f(lightSpecularPos, 1.0f, 1.0f, 1.0f);
+	glUniform3f(lightSpecularPos, 0.0f, 0.0f, 0.0f);
 
-
+	
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 }
@@ -779,22 +676,26 @@ void cleanup()
 	player.reset(nullptr);
 	shader.reset(nullptr);
 	cam.reset(nullptr);
-	sphere.reset(nullptr);
+	//sphere.reset(nullptr);
 	
 }
 void draw(){
-			
 
-	
 
 	toonShader->useShader();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+
 	player->viewMatrix = view;
 	player->draw(shader.get());
 	
-	sphere->viewMatrix = view;
-	sphere->draw(toonShader.get());
+	/*sphere->viewMatrix = view;
+	sphere->draw(toonShader.get());*/
 
 	shader->useShader();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	
 	path->viewMatrix = view;
 	path->draw(shader.get());
 	
@@ -809,7 +710,7 @@ void draw(){
 	plattform2->viewMatrix = view;
 	plattform2->draw(shader.get());
 
-	
+		
 
 }
 
@@ -867,6 +768,296 @@ void mouseMovementPoll(GLFWwindow* window, double xpos, double ypos)
 	GLint model_view = glGetUniformLocation(shader->programHandle, "view");
 	glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
 }
+
+void keyboardInput(GLFWwindow* window){
+	const physx::PxControllerFilters filters(NULL, NULL, NULL);
+
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE))
+	{
+		glfwSetWindowShouldClose(window, true);
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_F1))
+	{
+		glTranslatef(0.0f, 0.0f, 0.0f);
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_A)){
+
+		glm::vec4 oldDirection = glm::vec4(-1.0, 0.0, 0.0, 1.0);
+		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
+		glm::vec4 newDirection = t1 * oldDirection;
+		//glm::vec3 deltaPos = glm::vec3(characterController->getPosition().x,characterController->getPosition().y, characterController->getPosition().z);
+		characterController->move(physx::PxVec3(0.01f*newDirection.x, 0, 0.01f*newDirection.z), 0.0, time_delta, filters);
+		//cameraController->move(physx::PxVec3(0.01f*newDirection.x, 0, 0), 0.0, time_delta, filters);
+		//deltaPos = glm::abs(deltaPos-glm::vec3(characterController->getPosition().x, characterController->getPosition().y, characterController->getPosition().z));
+		player->position.x = characterController->getFootPosition().x;
+		player->position.y = characterController->getFootPosition().y;
+		player->position.z = characterController->getFootPosition().z;
+
+		player->center.x = characterController->getPosition().x;
+		player->center.y = characterController->getPosition().y;
+		player->center.z = characterController->getPosition().z;
+
+		player->angle = glm::radians(-yaw + 90);
+
+		/*cam->eyeX += deltaPos.x;
+		cam->eyeY += deltaPos.y;
+		cam->eyeZ += deltaPos.z;*/
+		//cam->eyeX = player->position.x;
+		camPos = player->center - camDirection * 10.0f;
+		cam->eyeX = camPos.x;
+		cam->eyeY = camPos.y;
+		cam->eyeZ = camPos.z;
+
+		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
+
+		/*player->position.x -= 10 * time_delta;
+
+		player->angle = glm::radians(-yaw + 90);
+
+
+
+
+
+		player->position.x += newDirection.x * time_delta * 10;
+		player->position.z += newDirection.z * time_delta * 10;
+
+		player->center.x += newDirection.x * time_delta * 10;
+		player->center.z += newDirection.z * time_delta * 10;
+		player->update();
+
+		*/
+	}
+	else if (glfwGetKey(window, GLFW_KEY_D))
+	{
+		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
+		glm::vec4 oldDirection = glm::vec4(1.0, 0.0, 0.0, 1.0);
+		glm::vec4 newDirection = t1 * oldDirection;
+
+		player->angle = glm::radians(-yaw - 90);
+
+		glm::vec3 pos = glm::vec3(characterController->getPosition().x, characterController->getPosition().y, characterController->getPosition().z);
+		characterController->move(physx::PxVec3(0.1f*newDirection.x, 0, 0.1f*newDirection.z), 0.0, time_delta, filters);
+
+		pos = glm::abs(pos - glm::vec3(characterController->getPosition().x, characterController->getPosition().y, characterController->getPosition().z));
+		player->position.x = characterController->getFootPosition().x;
+
+		player->center.x = characterController->getPosition().x;
+		player->center.y = characterController->getPosition().y;
+		player->center.z = characterController->getPosition().z;
+
+		cam->eyeX += newDirection.x*pos.x;
+		cam->eyeZ += newDirection.z*pos.z;
+		//cam->eyeX = player->position.x;
+
+		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
+
+		//player->position.x += 10* time_delta;
+		//player->center.x += 10 * time_delta;
+		/*player->angle = glm::radians(-yaw - 90);
+		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
+		glm::vec4 oldDirection = glm::vec4(1.0, 0.0, 0.0, 1.0);
+		glm::vec4 newDirection = t1 * oldDirection;
+
+		player->position.x += newDirection.x * time_delta * 10;
+		player->position.z += newDirection.z * time_delta * 10;
+
+		player->center.x += newDirection.x * time_delta * 10;
+		player->center.z += newDirection.z * time_delta * 10;
+		player->update();
+
+		view = cam->update(glm::vec3(cam->eyeX += newDirection.x * time_delta * 10, cam->eyeY, cam->eyeZ += newDirection.z * time_delta * 10), player->center);*/
+
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_W))
+	{
+
+		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
+		glm::vec4 oldDirection = glm::vec4(direction.x, direction.y, direction.z, 1.0);
+		glm::vec4 newDirection = t1 * oldDirection;
+
+		glm::vec3 deltaPos = glm::vec3(characterController->getPosition().x, characterController->getPosition().y, characterController->getPosition().z);
+		characterController->move(physx::PxVec3(0.01f*newDirection.x, 0, 0.01f*newDirection.z), 0.0, time_delta, filters);
+
+		deltaPos = glm::abs(deltaPos - glm::vec3(characterController->getPosition().x, characterController->getPosition().y, characterController->getPosition().z));
+		player->position.z = characterController->getFootPosition().z;
+		player->position.x = characterController->getFootPosition().x;
+
+		player->center.x = characterController->getPosition().x;
+		player->center.y = characterController->getPosition().y;
+		player->center.z = characterController->getPosition().z;
+
+		cam->eyeX += deltaPos.x;
+		//cam->eyeY += deltaPos.y;
+		cam->eyeZ += deltaPos.z;
+
+		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
+
+		//player->position.z -= 10 * time_delta;
+		//player->center.z -= 10 * time_delta;
+		/*player->angle = glm::radians(-yaw);
+		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
+		glm::vec4 oldDirection = glm::vec4(direction.x, direction.y, direction.z, 1.0);
+		glm::vec4 newDirection = t1 * oldDirection;
+
+
+		player->position.x += newDirection.x * time_delta * 10;
+		player->position.z += newDirection.z * time_delta * 10;
+
+		player->center.x += newDirection.x * time_delta * 10;
+		player->center.z += newDirection.z * time_delta * 10;
+		player->update();
+
+		view = cam->update(glm::vec3(cam->eyeX += newDirection.x * time_delta * 10, cam->eyeY, cam->eyeZ += newDirection.z * time_delta * 10), player->center);
+		GLint model_view = glGetUniformLocation(shader->programHandle, "view");
+		glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));*/
+	}
+	else if (glfwGetKey(window, GLFW_KEY_S))
+	{
+		//player->position.z += 10 * time_delta;
+		//player->center.z += 10 * time_delta;
+		player->angle = glm::radians(-yaw + 180);
+		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
+		glm::vec4 oldDirection = glm::vec4(direction.x * -1.0, direction.y * -1.0, direction.z * -1.0, 1.0);
+		glm::vec4 newDirection = t1 * oldDirection;
+
+		player->position.x += newDirection.x * time_delta * 10;
+		player->position.z += newDirection.z * time_delta * 10;
+
+		player->center.x += newDirection.x * time_delta * 10;
+		player->center.z += newDirection.z * time_delta * 10;
+		player->update();
+
+		view = cam->update(glm::vec3(cam->eyeX += newDirection.x * time_delta * 10, cam->eyeY, cam->eyeZ += newDirection.z * time_delta * 10), player->center);
+		GLint model_view = glGetUniformLocation(shader->programHandle, "view");
+		glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
+	}
+}
+
+// RenderCube() Renders a 1x1 3D cube in NDC.
+GLuint cubeVAO = 0;
+GLuint cubeVBO = 0;
+void RenderCube()
+{
+	// Initialize (if necessary)
+	if (cubeVAO == 0)
+	{
+		GLfloat vertices[] = {
+			// Back face
+			-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, // Bottom-left
+			0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f, // top-right
+			0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f, // bottom-right         
+			0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f,  // top-right
+			-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,  // bottom-left
+			-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f,// top-left
+			// Front face
+			-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // bottom-left
+			0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,  // bottom-right
+			0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,  // top-right
+			0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // top-right
+			-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,  // top-left
+			-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,  // bottom-left
+			// Left face
+			-0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // top-right
+			-0.5f, 0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f, // top-left
+			-0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,  // bottom-left
+			-0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // bottom-left
+			-0.5f, -0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f,  // bottom-right
+			-0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // top-right
+			// Right face
+			0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // top-left
+			0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // bottom-right
+			0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, // top-right         
+			0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,  // bottom-right
+			0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,  // top-left
+			0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // bottom-left     
+			// Bottom face
+			-0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, // top-right
+			0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 1.0f, // top-left
+			0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f,// bottom-left
+			0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, // bottom-left
+			-0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, // bottom-right
+			-0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, // top-right
+			// Top face
+			-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,// top-left
+			0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // bottom-right
+			0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, // top-right     
+			0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // bottom-right
+			-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,// top-left
+			-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f // bottom-left        
+		};
+		glGenVertexArrays(1, &cubeVAO);
+		glGenBuffers(1, &cubeVBO);
+		// Fill buffer
+		glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+		// Link vertex attributes
+		glBindVertexArray(cubeVAO);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+		glEnableVertexAttribArray(2);
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+	}
+	// Render Cube
+	glBindVertexArray(cubeVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindVertexArray(0);
+}
+
+void RenderScene(Shader* shader)
+{
+	// Floor
+	glm::mat4 model;
+	glUniformMatrix4fv(glGetUniformLocation(shader->programHandle, "model"), 1, GL_FALSE, glm::value_ptr(model));
+	glBindVertexArray(planeVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindVertexArray(0);
+	// Cubes
+	model = glm::mat4();
+	model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0));
+	glUniformMatrix4fv(glGetUniformLocation(shader->programHandle, "model"), 1, GL_FALSE, glm::value_ptr(model));
+	RenderCube();
+	model = glm::mat4();
+	model = glm::translate(model, glm::vec3(2.0f, 0.0f, 1.0));
+	glUniformMatrix4fv(glGetUniformLocation(shader->programHandle, "model"), 1, GL_FALSE, glm::value_ptr(model));
+	RenderCube();
+	model = glm::mat4();
+	model = glm::translate(model, glm::vec3(-1.0f, 0.0f, 2.0));
+	model = glm::rotate(model, 60.0f, glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
+	model = glm::scale(model, glm::vec3(0.5));
+	glUniformMatrix4fv(glGetUniformLocation(shader->programHandle, "model"), 1, GL_FALSE, glm::value_ptr(model));
+	RenderCube();
+}
+
+void renderShadowMap(){
+	
+	player->viewMatrix = view;
+	player->draw(shadowMapShader.get());
+
+
+	//sphere->draw(shadowMapShader.get());
+
+	path->viewMatrix = view;
+	path->draw(shadowMapShader.get());
+
+	path2->viewMatrix = view;
+	path2->draw(shadowMapShader.get());
+
+	path3->viewMatrix = view;
+	path3->draw(shadowMapShader.get());
+
+
+	plattform->draw(shadowMapShader.get());
+
+	plattform2->draw(shadowMapShader.get());
+}
+
 
 static void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const GLvoid* userParam) {
 	switch (id) {

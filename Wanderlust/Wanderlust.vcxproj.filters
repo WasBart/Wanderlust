@@ -33,6 +33,9 @@
     <ClCompile Include="Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Shader\test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="shader.h">
@@ -62,6 +65,18 @@
       <Filter>Shader</Filter>
     </None>
     <None Include="..\Shader\toon2.frag">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="..\Shader\shadowMapShader.fragment">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="..\Shader\shadowMapShader.vert">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="..\Shader\debugDepthQuad.frag">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="..\Shader\debugDepthQuad.vert">
       <Filter>Shader</Filter>
     </None>
   </ItemGroup>

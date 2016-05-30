@@ -8,16 +8,20 @@ out vec3 worldNormal;
 out vec2 fragmentUV;
 out vec3 fragPos;  
 out vec3 viewPos;
+out vec4 fragPosLightSpace;
 
 layout (location = 4) uniform mat4 model; 
 layout (location = 5) uniform mat4 view;
 uniform mat4 projection;
+uniform mat4 lightSpaceMatrix;
+
 
 void main()
 {
 	fragmentUV = uv;
 	worldNormal = mat3(transpose(inverse(model))) * normal;  
 	fragPos = (model * vec4(position, 1.0f)).xyz;
-	viewPos = vec3((inverse(view)[3]));
+	//viewPos = vec3((inverse(view)[3]));
 	gl_Position = projection* view* model* vec4(position,1);
+	fragPosLightSpace = lightSpaceMatrix  * vec4(fragPos,1.0f);
 }

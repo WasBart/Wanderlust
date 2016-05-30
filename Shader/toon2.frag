@@ -4,6 +4,7 @@ in vec3 worldNormal;
 in vec2 fragmentUV;
 in vec3 fragPos;
 in vec3 viewPos;
+in vec4 fragPosLightSpace; 
 
 layout (location = 0) out vec4 fragColor;
 
