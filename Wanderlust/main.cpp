@@ -341,7 +341,7 @@ int main(int argc, char** argv){
 	cameraController->setPosition(physx::PxExtendedVec3(cam->eyeX, cam->eyeY, cam->eyeZ));
 
 
-	player->position.x = characterController->getFootPosition().x;
+	player->position.x = characterController->getFootPosition().x;	
 	player->position.y = characterController->getFootPosition().y;
 	player->position.z = characterController->getFootPosition().z;
 
@@ -771,6 +771,62 @@ void keyboardInput(GLFWwindow* window){
 		glTranslatef(0.0f, 0.0f, 0.0f);
 	}
 
+	if (glfwGetKey(window, GLFW_KEY_W))
+	{
+
+		glm::vec4 oldDirection = glm::vec4(0.0, 0.0, -1.0, 1.0);
+		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
+		glm::vec4 newDirection = t1 * oldDirection;
+
+		disp.x += 4.0f*newDirection.x*time_delta;
+		disp.z += 4.0f*newDirection.z*time_delta;
+
+
+		player->position.x = characterController->getFootPosition().x;
+		player->position.y = characterController->getFootPosition().y;
+		player->position.z = characterController->getFootPosition().z;
+
+		player->center.x = characterController->getPosition().x;
+		player->center.y = characterController->getPosition().y;
+		player->center.z = characterController->getPosition().z;
+
+		player->angle = glm::radians(-yaw);
+
+		camPos = player->center - camDirection * 10.0f;
+		cam->eyeX = camPos.x;
+		cam->eyeY = camPos.y;
+		cam->eyeZ = camPos.z;
+
+		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
+
+	}
+	else if (glfwGetKey(window, GLFW_KEY_S))
+	{
+		glm::vec4 oldDirection = glm::vec4(0.0, 0.0, 1.0, 1.0);
+		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
+		glm::vec4 newDirection = t1 * oldDirection;
+
+		disp.x += 4.0f*newDirection.x*time_delta;
+		disp.z += 4.0f*newDirection.z*time_delta;
+
+		player->position.x = characterController->getFootPosition().x;
+		player->position.y = characterController->getFootPosition().y;
+		player->position.z = characterController->getFootPosition().z;
+
+		player->center.x = characterController->getPosition().x;
+		player->center.y = characterController->getPosition().y;
+		player->center.z = characterController->getPosition().z;
+
+		player->angle = glm::radians(-yaw + 180);
+
+		camPos = player->center - camDirection * 10.0f;
+		cam->eyeX = camPos.x;
+		cam->eyeY = camPos.y;
+		cam->eyeZ = camPos.z;
+
+		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
+	}
+
 	if (glfwGetKey(window, GLFW_KEY_A)){
 
 		glm::vec4 oldDirection = glm::vec4(-1.0, 0.0, 0.0, 1.0);
@@ -778,8 +834,8 @@ void keyboardInput(GLFWwindow* window){
 		glm::vec4 newDirection = t1 * oldDirection;
 		//glm::vec3 deltaPos = glm::vec3(characterController->getPosition().x,characterController->getPosition().y, characterController->getPosition().z);
 		
-		disp.x = 4.0f*newDirection.x*time_delta;
-		disp.z = 4.0f*newDirection.z*time_delta;
+		disp.x += 4.0f*newDirection.x*time_delta;
+		disp.z += 4.0f*newDirection.z*time_delta;
 
 		//deltaPos = glm::abs(deltaPos-glm::vec3(characterController->getPosition().x, characterController->getPosition().y, characterController->getPosition().z));
 		player->position.x = characterController->getFootPosition().x;
@@ -826,8 +882,8 @@ void keyboardInput(GLFWwindow* window){
 		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
 		glm::vec4 newDirection = t1 * oldDirection;
 
-		disp.x = 4.0f*newDirection.x * time_delta;
-		disp.z = 4.0f*newDirection.z * time_delta;
+		disp.x += 4.0f*newDirection.x * time_delta;
+		disp.z += 4.0f*newDirection.z * time_delta;
 
 		player->position.x = characterController->getFootPosition().x;
 		player->position.y = characterController->getFootPosition().y;
@@ -849,61 +905,7 @@ void keyboardInput(GLFWwindow* window){
 
 	}
 
-	if (glfwGetKey(window, GLFW_KEY_W))
-	{
-
-		glm::vec4 oldDirection = glm::vec4(0.0, 0.0, -1.0, 1.0);
-		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
-		glm::vec4 newDirection = t1 * oldDirection;
-
-		disp.x = 4.0f*newDirection.x*time_delta;
-		disp.z = 4.0f*newDirection.z*time_delta;
-		
-
-		player->position.x = characterController->getFootPosition().x;
-		player->position.y = characterController->getFootPosition().y;
-		player->position.z = characterController->getFootPosition().z;
-
-		player->center.x = characterController->getPosition().x;
-		player->center.y = characterController->getPosition().y;
-		player->center.z = characterController->getPosition().z;
-
-		player->angle = glm::radians(-yaw);
-
-		camPos = player->center - camDirection * 10.0f;
-		cam->eyeX = camPos.x;
-		cam->eyeY = camPos.y;
-		cam->eyeZ = camPos.z;
-
-		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
-
-	}
-	else if (glfwGetKey(window, GLFW_KEY_S))
-	{
-		glm::vec4 oldDirection = glm::vec4(0.0, 0.0, 1.0, 1.0);
-		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
-		glm::vec4 newDirection = t1 * oldDirection;
-
-		disp.x = 4.0f*newDirection.x*time_delta;
-		disp.z = 4.0f*newDirection.z*time_delta;
-
-		player->position.x = characterController->getFootPosition().x;
-		player->position.y = characterController->getFootPosition().y;
-		player->position.z = characterController->getFootPosition().z;
-
-		player->center.x = characterController->getPosition().x;
-		player->center.y = characterController->getPosition().y;
-		player->center.z = characterController->getPosition().z;
-
-		player->angle = glm::radians(-yaw + 180);
-
-		camPos = player->center - camDirection * 10.0f;
-		cam->eyeX = camPos.x;
-		cam->eyeY = camPos.y;
-		cam->eyeZ = camPos.z;
-
-		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
-	}
+	
 }
 
 void renderShadowMap(){
