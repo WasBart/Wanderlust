@@ -84,8 +84,6 @@ std::unique_ptr<Model> plattform;
 std::unique_ptr<Model> plattform2;
 std::unique_ptr<Model> sphere;
 std::unique_ptr<Model> path;
-std::unique_ptr<Model> path2;
-std::unique_ptr<Model> path3;
 
 glm::mat4 persp;
 glm::mat4 view;
@@ -101,6 +99,7 @@ float time_delta;
 
 GLfloat near_plane = 0.1f, far_plane = 100.0f;
 physx::PxReal myTimeStep = 1.0f / 60.0f;
+physx::PxVec3 disp;
 
 GLfloat lastX = 400, lastY = 300;
 GLfloat yaw = 0.0f;
@@ -109,7 +108,7 @@ GLuint depthMap;
 glm::vec4 camUp = glm::vec4(0.0f,1.0f,0.0f,1.0f);
 
 // Light source
-glm::vec3 lightPos(-2.0f, 8.0f, -1.0f);
+glm::vec3 lightPos(-2.0f, 8.0f, -2.0f);
 
 
 int main(int argc, char** argv){
@@ -425,6 +424,7 @@ int main(int argc, char** argv){
 		shader->useShader();
 		
 		glUniformMatrix4fv(glGetUniformLocation(shader->programHandle, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+		glUniform1i(glGetUniformLocation(shader->programHandle, "depthMap"), depthMap);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, depthMap);
 		draw();
@@ -469,7 +469,7 @@ int main(int argc, char** argv){
 		}
 
 		keyboardInput(window);
-		
+		update(time_delta);
 	}
 
 	cleanup();
@@ -548,13 +548,8 @@ void init(GLFWwindow* window)
 	plattform2 = std::make_unique<Model>("../Models/plattform.dae");
 	//sphere = std::make_unique<Model>("../Models/sphere.dae");
 	path = std::make_unique<Model>("../Models/path.dae");
-	path2 = std::make_unique<Model>("../Models/path.dae");
-	path3 = std::make_unique<Model>("../Models/path.dae");
 
-	
-
-	player->position = glm::vec3(0, 0, 0);
-	player->update();
+	player->position = glm::vec3(0, 0.5f, 0);
 	view = cam->setUp(player->center);
 
 	projection = glm::perspective(glm::radians(60.0f), width / height, near_plane, far_plane);
@@ -563,17 +558,6 @@ void init(GLFWwindow* window)
 	path->position = glm::vec3(0, -1.0f, 5.0f);
 	path->scale = glm::vec3(10.0f, 1.0f, 10.0f);
 	
-	path2->viewMatrix = view;
-	path2->position = glm::vec3(-1.0f, -1.0f, path->position.z - abs(path->minVector.z) + abs(path->maxVector.z));
-	path2->scale = glm::vec3(0.25f, 1.0f, 1.0f);
-
-	path2->viewMatrix = view;
-	path3->position = glm::vec3(-0.7f, -1.0f, path2->position.z - abs(path->minVector.z) + abs(path->maxVector.z));
-	path3->scale = glm::vec3(1.0f, 1.0f, 0.2f);
-
-
-	player->position = glm::vec3(0, 0, 0);
-	player->update();
 	plattform->position = glm::vec3(5.0f, -1.0f, 0);
 	plattform->viewMatrix = view;
 
@@ -585,7 +569,7 @@ void init(GLFWwindow* window)
 	
 
 	//ToonShader
-	toonShader->useShader();
+	/*toonShader->useShader();
 
 	int modelView = glGetUniformLocation(shader->programHandle, "view");
 	glUniformMatrix4fv(modelView, 1, GL_FALSE, glm::value_ptr(view));
@@ -600,7 +584,7 @@ void init(GLFWwindow* window)
 	GLint matSpecularPos = glGetUniformLocation(shader->programHandle, "mat.specular");
 	GLint matShinePos = glGetUniformLocation(shader->programHandle, "mat.shininess");
 
-	glUniform3f(matAmbientPos, 0.5f, 0.5f, 0.5f);
+	glUniform3f(matAmbientPos, 0.1f, 0.1f, 0.1f);
 	glUniform3f(matDiffusePos, 0.3f, 0.3f, 0.7f);
 	glUniform3f(matSpecularPos, 0.0f, 0.0f, 0.0f);
 	glUniform1f(matShinePos, 40.0f);
@@ -621,24 +605,24 @@ void init(GLFWwindow* window)
 	/*sphere->position = spherePos;
 	sphere->viewMatrix = view;
 	sphere->update();*/
-
+	
 	//Basic Shader
 	shader->useShader();
 
-	modelView = glGetUniformLocation(shader->programHandle, "view");
+	int modelView = glGetUniformLocation(shader->programHandle, "view");
 	glUniformMatrix4fv(modelView, 1, GL_FALSE, glm::value_ptr(view));
 
-    modelProjection = glGetUniformLocation(shader->programHandle, "projection");
+    int modelProjection = glGetUniformLocation(shader->programHandle, "projection");
 	glUniformMatrix4fv(modelProjection, 1, GL_FALSE, glm::value_ptr(projection));
 		
 	//Setting MaterialProperties
 
-	matAmbientPos = glGetUniformLocation(shader->programHandle, "mat.ambient");
-	matDiffusePos = glGetUniformLocation(shader->programHandle, "mat.diffuse");
-	matSpecularPos = glGetUniformLocation(shader->programHandle, "mat.specular");
-	matShinePos = glGetUniformLocation(shader->programHandle, "mat.shininess");
+	int matAmbientPos = glGetUniformLocation(shader->programHandle, "mat.ambient");
+	int matDiffusePos = glGetUniformLocation(shader->programHandle, "mat.diffuse");
+	int matSpecularPos = glGetUniformLocation(shader->programHandle, "mat.specular");
+	int	matShinePos = glGetUniformLocation(shader->programHandle, "mat.shininess");
 
-	glUniform3f(matAmbientPos, 0.1f, 0.1f, 0.1f);
+	glUniform3f(matAmbientPos, 0.4f, 0.4f, 0.4f);
 	glUniform3f(matDiffusePos, 1.0f, 1.0f, 1.0f);
 	glUniform3f(matSpecularPos,1.0f, 1.0f, 1.0f);
 	glUniform1f(matShinePos, 40.0f);
@@ -646,13 +630,13 @@ void init(GLFWwindow* window)
 
 	//Setting LightProperties
 
-	lightAmbientPos = glGetUniformLocation(shader->programHandle, "light.ambient");
-	lightDiffusePos = glGetUniformLocation(shader->programHandle, "light.diffuse");
-	lightSpecularPos = glGetUniformLocation(shader->programHandle, "light.specular");
-    lightDirectionPos = glGetUniformLocation(shader->programHandle, "light.direction");
+	int lightAmbientPos = glGetUniformLocation(shader->programHandle, "light.ambient");
+	int lightDiffusePos = glGetUniformLocation(shader->programHandle, "light.diffuse");
+	int lightSpecularPos = glGetUniformLocation(shader->programHandle, "light.specular");
+    int lightDirectionPos = glGetUniformLocation(shader->programHandle, "light.direction");
 
 	glUniform3f(lightDirectionPos, lightPos.x, lightPos.y, lightPos.z);
-	glUniform3f(lightAmbientPos, 0.2f, 0.2f, 0.2f);
+	glUniform3f(lightAmbientPos, 1.0f, 1.0f, 1.0f);
 	glUniform3f(lightDiffusePos, 1.0f, 1.0f, 1.0f);
 	glUniform3f(lightSpecularPos, 0.0f, 0.0f, 0.0f);
 
@@ -682,9 +666,8 @@ void cleanup()
 void draw(){
 
 
-	toonShader->useShader();
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, depthMap);
+	shader->useShader();
+	
 
 	player->viewMatrix = view;
 	player->draw(shader.get());
@@ -692,19 +675,9 @@ void draw(){
 	/*sphere->viewMatrix = view;
 	sphere->draw(toonShader.get());*/
 
-	shader->useShader();
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, depthMap);
-	
 	path->viewMatrix = view;
 	path->draw(shader.get());
 	
-	path2->viewMatrix = view;
-	path2->draw(shader.get());
-
-	path3->viewMatrix = view;
-	path3->draw(shader.get());
-
 	plattform->viewMatrix = view;
 	plattform->draw(shader.get());
 	plattform2->viewMatrix = view;
@@ -716,7 +689,23 @@ void draw(){
 
 void update(float time_delta)
 {
-	player->update();
+	const physx::PxControllerFilters filters(NULL, NULL, NULL);
+	characterController->move(disp, 0, time_delta, filters);
+	player->position.x = characterController->getFootPosition().x;
+	player->position.y = characterController->getFootPosition().y;
+	player->position.z = characterController->getFootPosition().z;
+
+	player->center.x = characterController->getPosition().x;
+	player->center.y = characterController->getPosition().y;
+	player->center.z = characterController->getPosition().z;
+
+	camPos = player->center - camDirection * 10.0f;
+	cam->eyeX = camPos.x;
+	cam->eyeY = camPos.y;
+	cam->eyeZ = camPos.z;
+
+	view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
+	disp.x = 0; disp.z = 0;
 }
 
 bool firstMouse = true;
@@ -788,8 +777,10 @@ void keyboardInput(GLFWwindow* window){
 		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
 		glm::vec4 newDirection = t1 * oldDirection;
 		//glm::vec3 deltaPos = glm::vec3(characterController->getPosition().x,characterController->getPosition().y, characterController->getPosition().z);
-		characterController->move(physx::PxVec3(0.01f*newDirection.x, 0, 0.01f*newDirection.z), 0.0, time_delta, filters);
-		//cameraController->move(physx::PxVec3(0.01f*newDirection.x, 0, 0), 0.0, time_delta, filters);
+		
+		disp.x = 4.0f*newDirection.x*time_delta;
+		disp.z = 4.0f*newDirection.z*time_delta;
+
 		//deltaPos = glm::abs(deltaPos-glm::vec3(characterController->getPosition().x, characterController->getPosition().y, characterController->getPosition().z));
 		player->position.x = characterController->getFootPosition().x;
 		player->position.y = characterController->getFootPosition().y;
@@ -835,7 +826,8 @@ void keyboardInput(GLFWwindow* window){
 		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
 		glm::vec4 newDirection = t1 * oldDirection;
 
-		characterController->move(physx::PxVec3(0.01f*newDirection.x, 0, 0.01f*newDirection.z), 0.0, time_delta, filters);
+		disp.x = 4.0f*newDirection.x * time_delta;
+		disp.z = 4.0f*newDirection.z * time_delta;
 
 		player->position.x = characterController->getFootPosition().x;
 		player->position.y = characterController->getFootPosition().y;
@@ -864,7 +856,9 @@ void keyboardInput(GLFWwindow* window){
 		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
 		glm::vec4 newDirection = t1 * oldDirection;
 
-		characterController->move(physx::PxVec3(0.01f*newDirection.x, 0, 0.01f*newDirection.z), 0.0, time_delta, filters);
+		disp.x = 4.0f*newDirection.x*time_delta;
+		disp.z = 4.0f*newDirection.z*time_delta;
+		
 
 		player->position.x = characterController->getFootPosition().x;
 		player->position.y = characterController->getFootPosition().y;
@@ -890,7 +884,8 @@ void keyboardInput(GLFWwindow* window){
 		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
 		glm::vec4 newDirection = t1 * oldDirection;
 
-		characterController->move(physx::PxVec3(0.01f*newDirection.x, 0, 0.01f*newDirection.z), 0.0, time_delta, filters);
+		disp.x = 4.0f*newDirection.x*time_delta;
+		disp.z = 4.0f*newDirection.z*time_delta;
 
 		player->position.x = characterController->getFootPosition().x;
 		player->position.y = characterController->getFootPosition().y;
@@ -911,105 +906,6 @@ void keyboardInput(GLFWwindow* window){
 	}
 }
 
-// RenderCube() Renders a 1x1 3D cube in NDC.
-GLuint cubeVAO = 0;
-GLuint cubeVBO = 0;
-void RenderCube()
-{
-	// Initialize (if necessary)
-	if (cubeVAO == 0)
-	{
-		GLfloat vertices[] = {
-			// Back face
-			-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, // Bottom-left
-			0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f, // top-right
-			0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f, // bottom-right         
-			0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f,  // top-right
-			-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,  // bottom-left
-			-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f,// top-left
-			// Front face
-			-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // bottom-left
-			0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,  // bottom-right
-			0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,  // top-right
-			0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // top-right
-			-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,  // top-left
-			-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,  // bottom-left
-			// Left face
-			-0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // top-right
-			-0.5f, 0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f, // top-left
-			-0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,  // bottom-left
-			-0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // bottom-left
-			-0.5f, -0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f,  // bottom-right
-			-0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // top-right
-			// Right face
-			0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // top-left
-			0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // bottom-right
-			0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, // top-right         
-			0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,  // bottom-right
-			0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,  // top-left
-			0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // bottom-left     
-			// Bottom face
-			-0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, // top-right
-			0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 1.0f, // top-left
-			0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f,// bottom-left
-			0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, // bottom-left
-			-0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, // bottom-right
-			-0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, // top-right
-			// Top face
-			-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,// top-left
-			0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // bottom-right
-			0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, // top-right     
-			0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // bottom-right
-			-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,// top-left
-			-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f // bottom-left        
-		};
-		glGenVertexArrays(1, &cubeVAO);
-		glGenBuffers(1, &cubeVBO);
-		// Fill buffer
-		glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-		// Link vertex attributes
-		glBindVertexArray(cubeVAO);
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
-	}
-	// Render Cube
-	glBindVertexArray(cubeVAO);
-	glDrawArrays(GL_TRIANGLES, 0, 36);
-	glBindVertexArray(0);
-}
-
-void RenderScene(Shader* shader)
-{
-	// Floor
-	glm::mat4 model;
-	glUniformMatrix4fv(glGetUniformLocation(shader->programHandle, "model"), 1, GL_FALSE, glm::value_ptr(model));
-	glBindVertexArray(planeVAO);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	glBindVertexArray(0);
-	// Cubes
-	model = glm::mat4();
-	model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0));
-	glUniformMatrix4fv(glGetUniformLocation(shader->programHandle, "model"), 1, GL_FALSE, glm::value_ptr(model));
-	RenderCube();
-	model = glm::mat4();
-	model = glm::translate(model, glm::vec3(2.0f, 0.0f, 1.0));
-	glUniformMatrix4fv(glGetUniformLocation(shader->programHandle, "model"), 1, GL_FALSE, glm::value_ptr(model));
-	RenderCube();
-	model = glm::mat4();
-	model = glm::translate(model, glm::vec3(-1.0f, 0.0f, 2.0));
-	model = glm::rotate(model, 60.0f, glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
-	model = glm::scale(model, glm::vec3(0.5));
-	glUniformMatrix4fv(glGetUniformLocation(shader->programHandle, "model"), 1, GL_FALSE, glm::value_ptr(model));
-	RenderCube();
-}
-
 void renderShadowMap(){
 	
 	player->viewMatrix = view;
@@ -1020,13 +916,6 @@ void renderShadowMap(){
 
 	path->viewMatrix = view;
 	path->draw(shadowMapShader.get());
-
-	path2->viewMatrix = view;
-	path2->draw(shadowMapShader.get());
-
-	path3->viewMatrix = view;
-	path3->draw(shadowMapShader.get());
-
 
 	plattform->draw(shadowMapShader.get());
 

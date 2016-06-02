@@ -74,7 +74,7 @@ void main()
 	  
 	//Diffuse Part
 	vec3 norm = normalize(worldNormal);
-    vec3 lightDir = normalize(light.direction - fragPos);
+    vec3 lightDir = normalize(light.direction);
 	float diff = max(dot(lightDir,norm), 0.0);
 	vec3 diffuse = diff * mat.diffuse * light.diffuse;
 	
@@ -90,6 +90,6 @@ void main()
 	//Resulting Light
 	
 	float shadow = ShadowCalculation(fragPosLightSpace);
-	vec3 result = (ambient + (1.0 - shadow) * (diffuse+specular)* textureColor);
+	vec3 result = ((ambient + (1.0 - shadow) * (diffuse+specular))* textureColor);
 	fragColor = vec4(result,1.0);
 }
