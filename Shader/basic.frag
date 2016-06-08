@@ -8,8 +8,8 @@ in vec4 fragPosLightSpace;
 
 layout (location = 0) out vec4 fragColor;
 
-uniform sampler2D tex;
-uniform sampler2D shadowMap;
+layout (binding = 0) uniform sampler2D tex;
+layout (binding = 2) uniform sampler2DShadow shadowMap;
 
 struct Material{
  vec3 ambient;
@@ -34,34 +34,27 @@ uniform Light light;
 float ShadowCalculation(vec4 fragPosLightSpace)
 {
    
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+
+vec3 sm_ndc = fragPosLightSpace.xyz/ fragPosLightSpace.w;
+sm_ndc = sm_ndc * 0.5 + 0.5;
+float shadowMult = texture(shadowMap, sm_ndc);
+
+return shadowMult;
+
+   /* vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     // [0,1] range
-    projCoords = projCoords * 0.5 + 0.5;
+   projCoords = projCoords * 0.5 + 0.5;
    
     float closestDepth = texture(shadowMap, projCoords.xy).r; 
    
-    float currentDepth = projCoords.z;
+    float currentDepth = projCoords.z / fragPosLightSpace.w;
    
     vec3 normal = normalize(worldNormal);
-    vec3 lightDir = normalize(light.direction - fragPos);
-    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+    vec3 lightDir = normalize(light.direction);
+   
  
-    float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
-    for(int x = -1; x <= 1; ++x)
-    {
-        for(int y = -1; y <= 1; ++y)
-        {
-            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
-            shadow += currentDepth - bias > pcfDepth  ? 1.0 : 0.0;        
-        }    
-    }
-    shadow /= 9.0;
-    
-    if(projCoords.z > 1.0)
-        shadow = 0.0;
-        
-    return shadow;
+    float shadow = (closestDepth > currentDepth ) ? 0.0: 1.0;
+	return shadow;*/
 }
 
 
@@ -82,7 +75,7 @@ void main()
 	
 	//Specular Part 
 	
-	vec3 viewDir = normalize(viewPos-fragPos);
+	vec3 viewDir = normalize(viewPos);
 	vec3 halfWayDir = normalize(lightDir + viewDir);
 	float spec = pow(max(dot(viewDir, halfWayDir),0.0f), 64);
 	vec3 specular = light.specular * spec * mat.specular; 

@@ -57,6 +57,7 @@ physx::PxController* characterController;
 physx::PxBoxControllerDesc cameraControllerDesc;
 physx::PxController* cameraController;
 
+//Function prototypes
 void init(GLFWwindow* window);
 void cleanup();
 void draw();
@@ -66,9 +67,10 @@ void update(float time_delta);
 void mouseMovementPoll(GLFWwindow* window, double xpos, double ypos);
 void keyboardInput(GLFWwindow*);
 void renderShadowMap();
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void RenderQuad();
 void RenderScene(Shader* shader);
-void RenderCube();
+
 
 GLuint planeVAO;
 
@@ -90,6 +92,8 @@ glm::mat4 view;
 glm::mat4 projection;
 glm::vec3 camPos;
 glm::vec3 direction = glm::vec3(0.0,0.0,-1.0);
+glm::mat4 lightProjection; 
+
 const glm::vec3 camInitial = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 camDirection = camInitial;
 float width;
@@ -197,7 +201,7 @@ int main(int argc, char** argv){
 	glfwWindowHint(GLFW_REFRESH_RATE, refreshRate);
 
 	glfwMakeContextCurrent(window);
-
+	glfwSetKeyCallback(window, key_callback);
 	glewExperimental = true;
 	if (glewInit() != GLEW_OK)
 	{
@@ -277,25 +281,12 @@ int main(int argc, char** argv){
 	//static friction, dynamic friction, restitution
 	physx::PxMaterial* mMaterial = gPhysicsSDK->createMaterial(0.5, 0.5, 0.5);
 
-	//Creating static plane
+	//Creating static plane is floor for now
 	physx::PxTransform planePos = physx::PxTransform(physx::PxVec3(0.0f, 0.0f, 0.0f),
 		physx::PxQuat(physx::PxHalfPi, physx::PxVec3(0.0f, 0.0f, 1.0f)));
 	physx::PxRigidStatic* plane = gPhysicsSDK->createRigidStatic(planePos);
 	plane->createShape(physx::PxPlaneGeometry(), *mMaterial);
 	gScene->addActor(*plane);
-
-	//2 Create Cube
-
-	physx::PxRigidDynamic*gBox;
-
-	physx::PxTransform boxPos(physx::PxVec3(0.0f, 10000.0f, 0.0f), physx::PxQuat::createIdentity());
-	physx::PxBoxGeometry boxGeometry(physx::PxVec3(0.5f, 0.5f, 0.5f));
-
-	gBox = physx::PxCreateDynamic(*gPhysicsSDK, boxPos, boxGeometry, *mMaterial,1.0f);
-	gBox->setAngularDamping(0.75);
-	gBox->setLinearVelocity(physx::PxVec3(0, 0, 0));
-	gScene->addActor(*gBox);
-	
 	
 	//create Player
 
@@ -304,9 +295,6 @@ int main(int argc, char** argv){
 	int playerBreadth = abs(player->maxVector.z - player->minVector.z);
 	int playerHeight = abs(player->maxVector.y - player->minVector.y); 
 
-	std::cout << playerWidth << std::endl;
-	std::cout << playerBreadth << std::endl;
-	std::cout << playerHeight << std::endl;
 	//PlayerControllerDescription
 	characterControllerDesc.height = playerHeight;
 	characterControllerDesc.radius = playerWidth / 2.0f;
@@ -318,19 +306,13 @@ int main(int argc, char** argv){
 	characterControllerDesc.upDirection = physx::PxVec3(0, 1, 0);
 	characterControllerDesc.material = mMaterial;
 	//CameraControllerDescription
-	cameraControllerDesc.halfHeight = 0.25f;
-	cameraControllerDesc.halfSideExtent = 0.25f;
-	cameraControllerDesc.halfForwardExtent = 0.25f;
-	cameraControllerDesc.material = mMaterial;
+
 	
 	characterController = manager->createController(characterControllerDesc);
 	if (characterController == nullptr){
 		std::cout << "error" << std::endl;
 	}
-	cameraController = manager->createController(cameraControllerDesc);
-	if (cameraController == nullptr){
-		std::cout << "error" << std::endl;
-	}
+
 
 	glm::vec3 pos, eye;
 	pos.x = characterController->getPosition().x;
@@ -338,7 +320,7 @@ int main(int argc, char** argv){
 	pos.z = characterController->getPosition().z;
 	eye = pos - camDirection * 10.0f;
 	view = cam->update(eye, pos);
-	cameraController->setPosition(physx::PxExtendedVec3(cam->eyeX, cam->eyeY, cam->eyeZ));
+
 
 
 	player->position.x = characterController->getFootPosition().x;	
@@ -367,11 +349,20 @@ int main(int argc, char** argv){
 	
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
 		SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	
+	/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);*/
+
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_COMPARE_MODE,GL_COMPARE_REF_TO_TEXTURE);
+	glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_COMPARE_FUNC,GL_GREATER);
+
+	//Points outside are set to given colour, so they don't appear shadowed
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	
+	GLfloat borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
@@ -380,7 +371,7 @@ int main(int argc, char** argv){
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	
-
+	float simTimer = 0.0f;
 	auto time = glfwGetTime();
 	while (!glfwWindowShouldClose(window))
 	{
@@ -389,8 +380,16 @@ int main(int argc, char** argv){
 		time_delta = (float)(time_new - time);
 		
 		time = time_new;
-		if (gScene){
+
+		simTimer += time_delta;
+
+
+		if (simTimer >= myTimeStep){
+			if (gScene){
 				StepPhysX();
+			}
+			update(time_delta);
+			simTimer -= myTimeStep;
 		}
 		
 		
@@ -400,22 +399,25 @@ int main(int argc, char** argv){
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//ShadowMap
-		glm::mat4 lightProjection, lightView;
+		glm::mat4 lightView;
 		glm::mat4 lightSpaceMatrix;
 
-		lightProjection = glm::ortho(-50.0f, 50.0f, -50.0f, 50.0f, 0.01f, 50.0f);
-		lightView = glm::lookAt(lightPos, glm::vec3(0), glm::vec3(0.0, 1.0, 0.0));
+
+		lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f,  0.01f,  20.0f);
+		lightView = glm::lookAt(lightPos+player->position, player->center , glm::vec3(0.0, 1.0, 0.0));
 		lightSpaceMatrix = lightProjection * lightView;
 		
 		// shadowMapRender
 		shadowMapShader->useShader();
+		glEnable(GL_POLYGON_OFFSET_FILL);
+		glPolygonOffset(4.f, 0.f);
 		glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
 		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
 		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 		glClear(GL_DEPTH_BUFFER_BIT);
 		renderShadowMap();
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		
+		glDisable(GL_POLYGON_OFFSET_FILL);
 	
 		// Normal Renderpass
 		glViewport(0, 0, width, height);
@@ -424,8 +426,8 @@ int main(int argc, char** argv){
 		shader->useShader();
 		
 		glUniformMatrix4fv(glGetUniformLocation(shader->programHandle, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
-		glUniform1i(glGetUniformLocation(shader->programHandle, "depthMap"), depthMap);
-		glActiveTexture(GL_TEXTURE0);
+		//glUniform1i(glGetUniformLocation(shader->programHandle, "depthMap"), depthMap);
+		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, depthMap);
 		draw();
 		
@@ -469,7 +471,6 @@ int main(int argc, char** argv){
 		}
 
 		keyboardInput(window);
-		update(time_delta);
 	}
 
 	cleanup();
@@ -645,9 +646,12 @@ void init(GLFWwindow* window)
 
 }
 
+
 void StepPhysX()
 {
-	gScene->simulate(myTimeStep);
+
+		gScene->simulate(myTimeStep);
+	
 	while (!gScene->fetchResults())
 	{
 
@@ -660,6 +664,7 @@ void cleanup()
 	player.reset(nullptr);
 	shader.reset(nullptr);
 	cam.reset(nullptr);
+	characterController->release();
 	//sphere.reset(nullptr);
 	
 }
@@ -690,7 +695,21 @@ void draw(){
 void update(float time_delta)
 {
 	const physx::PxControllerFilters filters(NULL, NULL, NULL);
-	characterController->move(disp, 0, time_delta, filters);
+
+	if (disp.y != 0){
+		disp.x *= 1.1f;
+		disp.z *= 1.1f;
+	}
+	physx::PxControllerCollisionFlags collisionFlags = characterController->move(disp, 0, myTimeStep, filters);
+	std::cout << ((collisionFlags & physx::PxControllerCollisionFlag::eCOLLISION_DOWN) == true) << std::endl;
+		
+	if ((collisionFlags & physx::PxControllerCollisionFlag::eCOLLISION_DOWN)){
+		disp.y = 0;
+	}
+	else{
+		disp.y -= 2 * myTimeStep;
+	}
+	
 	player->position.x = characterController->getFootPosition().x;
 	player->position.y = characterController->getFootPosition().y;
 	player->position.z = characterController->getFootPosition().z;
@@ -705,6 +724,7 @@ void update(float time_delta)
 	cam->eyeZ = camPos.z;
 
 	view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
+	
 	disp.x = 0; disp.z = 0;
 }
 
@@ -758,6 +778,16 @@ void mouseMovementPoll(GLFWwindow* window, double xpos, double ypos)
 	glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
 }
 
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
+
+	if (disp.y == 0){
+		if (key == GLFW_KEY_SPACE && action == GLFW_PRESS){
+			disp.y = 30 * myTimeStep;
+		}
+	}
+	
+}
+
 void keyboardInput(GLFWwindow* window){
 	const physx::PxControllerFilters filters(NULL, NULL, NULL);
 
@@ -778,8 +808,8 @@ void keyboardInput(GLFWwindow* window){
 		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
 		glm::vec4 newDirection = t1 * oldDirection;
 
-		disp.x += 4.0f*newDirection.x*time_delta;
-		disp.z += 4.0f*newDirection.z*time_delta;
+		disp.x += 0.5f*newDirection.x*myTimeStep;
+		disp.z += 0.5f*newDirection.z*myTimeStep;
 
 
 		player->position.x = characterController->getFootPosition().x;
@@ -806,8 +836,8 @@ void keyboardInput(GLFWwindow* window){
 		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
 		glm::vec4 newDirection = t1 * oldDirection;
 
-		disp.x += 4.0f*newDirection.x*time_delta;
-		disp.z += 4.0f*newDirection.z*time_delta;
+		disp.x += 0.5f*newDirection.x*myTimeStep;
+		disp.z += 0.5f*newDirection.z*myTimeStep;
 
 		player->position.x = characterController->getFootPosition().x;
 		player->position.y = characterController->getFootPosition().y;
@@ -834,8 +864,8 @@ void keyboardInput(GLFWwindow* window){
 		glm::vec4 newDirection = t1 * oldDirection;
 		//glm::vec3 deltaPos = glm::vec3(characterController->getPosition().x,characterController->getPosition().y, characterController->getPosition().z);
 		
-		disp.x += 4.0f*newDirection.x*time_delta;
-		disp.z += 4.0f*newDirection.z*time_delta;
+		disp.x += 0.5f*newDirection.x*myTimeStep;
+		disp.z += 0.5f*newDirection.z*myTimeStep;
 
 		//deltaPos = glm::abs(deltaPos-glm::vec3(characterController->getPosition().x, characterController->getPosition().y, characterController->getPosition().z));
 		player->position.x = characterController->getFootPosition().x;
@@ -848,10 +878,6 @@ void keyboardInput(GLFWwindow* window){
 
 		player->angle = glm::radians(-yaw + 90);
 
-		/*cam->eyeX += deltaPos.x;
-		cam->eyeY += deltaPos.y;
-		cam->eyeZ += deltaPos.z;*/
-		//cam->eyeX = player->position.x;
 		camPos = player->center - camDirection * 10.0f;
 		cam->eyeX = camPos.x;
 		cam->eyeY = camPos.y;
@@ -882,8 +908,8 @@ void keyboardInput(GLFWwindow* window){
 		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
 		glm::vec4 newDirection = t1 * oldDirection;
 
-		disp.x += 4.0f*newDirection.x * time_delta;
-		disp.z += 4.0f*newDirection.z * time_delta;
+		disp.x += 0.5f*newDirection.x * myTimeStep;
+		disp.z += 0.5f*newDirection.z * myTimeStep;
 
 		player->position.x = characterController->getFootPosition().x;
 		player->position.y = characterController->getFootPosition().y;
@@ -904,6 +930,12 @@ void keyboardInput(GLFWwindow* window){
 
 
 	}
+	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT))
+	{
+		disp.x *= 1.1;
+		disp.z *= 1.1;
+	}
+
 
 	
 }
