@@ -88,15 +88,19 @@
   <ItemGroup>
     <ClCompile Include="..\Shader\test.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Frustum.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Model.cpp" />
+    <ClCompile Include="Plane.cpp" />
     <ClCompile Include="shader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Frustum.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Model.h" />
+    <ClInclude Include="Plane.h" />
     <ClInclude Include="shader.h" />
   </ItemGroup>
   <ItemGroup>

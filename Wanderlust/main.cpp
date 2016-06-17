@@ -54,8 +54,6 @@ physx::PxScene* gScene = NULL;
 physx::PxControllerManager* manager;
 physx::PxCapsuleControllerDesc characterControllerDesc;
 physx::PxController* characterController;
-physx::PxBoxControllerDesc cameraControllerDesc;
-physx::PxController* cameraController;
 
 //Function prototypes
 void init(GLFWwindow* window);
@@ -288,6 +286,21 @@ int main(int argc, char** argv){
 	plane->createShape(physx::PxPlaneGeometry(), *mMaterial);
 	gScene->addActor(*plane);
 	
+	//2) Create cube  
+	physx::PxReal density = 1.0f;
+	physx::PxTransform transform(physx::PxVec3(0.0f, 10.0f, 0.0f), physx::PxQuat::createIdentity());
+	physx::PxVec3 dimensions(0.5, 0.5, 0.5);
+	physx::PxBoxGeometry geometry(dimensions);
+
+	physx::PxRigidDynamic *actor = PxCreateDynamic(*gPhysicsSDK, transform, geometry, *mMaterial, density);
+	actor->setAngularDamping(0.75);
+	actor->setLinearVelocity(physx::PxVec3(0, 0, 0));
+	if (!actor)
+		std::cerr << "create actor failed!" << std::endl;
+	gScene->addActor(*actor);
+	physx::PxBounds3 bounds = actor->getWorldBounds();
+
+
 	//create Player
 
 
@@ -403,7 +416,7 @@ int main(int argc, char** argv){
 		glm::mat4 lightSpaceMatrix;
 
 
-		lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f,  0.01f,  20.0f);
+		lightProjection = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f,  0.01f,  20.0f);
 		lightView = glm::lookAt(lightPos+player->position, player->center , glm::vec3(0.0, 1.0, 0.0));
 		lightSpaceMatrix = lightProjection * lightView;
 		
@@ -431,16 +444,7 @@ int main(int argc, char** argv){
 		glBindTexture(GL_TEXTURE_2D, depthMap);
 		draw();
 		
-		//DepthmapRender 
-		
-		/*debugDepthQuad->useShader();
 	
-		glUniform1f(glGetUniformLocation(debugDepthQuad->programHandle, "near_plane"), near_plane);
-		glUniform1f(glGetUniformLocation(debugDepthQuad->programHandle, "far_plane"), far_plane);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, depthMap);
-		RenderQuad();*/
-		
 
 
 		rad += (glm::pi<float>() / 180.0f) * 20 * time_delta;
@@ -700,14 +704,13 @@ void update(float time_delta)
 		disp.x *= 1.1f;
 		disp.z *= 1.1f;
 	}
-	physx::PxControllerCollisionFlags collisionFlags = characterController->move(disp, 0, myTimeStep, filters);
-	std::cout << ((collisionFlags & physx::PxControllerCollisionFlag::eCOLLISION_DOWN) == true) << std::endl;
+	physx::PxControllerCollisionFlags collisionFlags = characterController->move(disp * myTimeStep, 0, myTimeStep, filters);
 		
 	if ((collisionFlags & physx::PxControllerCollisionFlag::eCOLLISION_DOWN)){
 		disp.y = 0;
 	}
 	else{
-		disp.y -= 2 * myTimeStep;
+		disp.y -= 2;
 	}
 	
 	player->position.x = characterController->getFootPosition().x;
@@ -782,7 +785,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 	if (disp.y == 0){
 		if (key == GLFW_KEY_SPACE && action == GLFW_PRESS){
-			disp.y = 30 * myTimeStep;
+			disp.y = 30;
 		}
 	}
 	
@@ -808,8 +811,8 @@ void keyboardInput(GLFWwindow* window){
 		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
 		glm::vec4 newDirection = t1 * oldDirection;
 
-		disp.x += 0.5f*newDirection.x*myTimeStep;
-		disp.z += 0.5f*newDirection.z*myTimeStep;
+		disp.x += 0.5f*newDirection.x;
+		disp.z += 0.5f*newDirection.z;
 
 
 		player->position.x = characterController->getFootPosition().x;
@@ -836,8 +839,8 @@ void keyboardInput(GLFWwindow* window){
 		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
 		glm::vec4 newDirection = t1 * oldDirection;
 
-		disp.x += 0.5f*newDirection.x*myTimeStep;
-		disp.z += 0.5f*newDirection.z*myTimeStep;
+		disp.x += 0.5f*newDirection.x;
+		disp.z += 0.5f*newDirection.z;
 
 		player->position.x = characterController->getFootPosition().x;
 		player->position.y = characterController->getFootPosition().y;
@@ -864,8 +867,8 @@ void keyboardInput(GLFWwindow* window){
 		glm::vec4 newDirection = t1 * oldDirection;
 		//glm::vec3 deltaPos = glm::vec3(characterController->getPosition().x,characterController->getPosition().y, characterController->getPosition().z);
 		
-		disp.x += 0.5f*newDirection.x*myTimeStep;
-		disp.z += 0.5f*newDirection.z*myTimeStep;
+		disp.x += 0.5f*newDirection.x;
+		disp.z += 0.5f*newDirection.z;
 
 		//deltaPos = glm::abs(deltaPos-glm::vec3(characterController->getPosition().x, characterController->getPosition().y, characterController->getPosition().z));
 		player->position.x = characterController->getFootPosition().x;
@@ -884,6 +887,7 @@ void keyboardInput(GLFWwindow* window){
 		cam->eyeZ = camPos.z;
 
 		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
+
 
 		/*player->position.x -= 10 * time_delta;
 
@@ -908,8 +912,8 @@ void keyboardInput(GLFWwindow* window){
 		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
 		glm::vec4 newDirection = t1 * oldDirection;
 
-		disp.x += 0.5f*newDirection.x * myTimeStep;
-		disp.z += 0.5f*newDirection.z * myTimeStep;
+		disp.x += 0.5f*newDirection.x;
+		disp.z += 0.5f*newDirection.z;
 
 		player->position.x = characterController->getFootPosition().x;
 		player->position.y = characterController->getFootPosition().y;
