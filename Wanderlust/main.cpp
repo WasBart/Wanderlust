@@ -98,7 +98,7 @@ float width;
 float height;
 float rad = 0.0f;
 float time_delta;
-
+float timeSim = 0.0f;
 GLfloat near_plane = 0.1f, far_plane = 100.0f;
 physx::PxReal myTimeStep = 1.0f / 60.0f;
 physx::PxVec3 disp;
@@ -298,6 +298,8 @@ int main(int argc, char** argv){
 	if (!actor)
 		std::cerr << "create actor failed!" << std::endl;
 	gScene->addActor(*actor);
+
+	//** USE FOR FRUSTUM CULLING; SEEMS TO WORK //*
 	physx::PxBounds3 bounds = actor->getWorldBounds();
 
 
@@ -394,16 +396,10 @@ int main(int argc, char** argv){
 		
 		time = time_new;
 
-		simTimer += time_delta;
-
-
-		if (simTimer >= myTimeStep){
-			if (gScene){
-				StepPhysX();
-			}
-			update(time_delta);
-			simTimer -= myTimeStep;
-		}
+		update(time_delta);
+		
+	
+		
 		
 		
 		/*std::cout << "frametime:" << time_delta * 1000 << "ms"
@@ -698,37 +694,49 @@ void draw(){
 
 void update(float time_delta)
 {
+
 	const physx::PxControllerFilters filters(NULL, NULL, NULL);
 
-	if (disp.y != 0){
-		disp.x *= 1.1f;
-		disp.z *= 1.1f;
-	}
-	physx::PxControllerCollisionFlags collisionFlags = characterController->move(disp * myTimeStep, 0, myTimeStep, filters);
-		
-	if ((collisionFlags & physx::PxControllerCollisionFlag::eCOLLISION_DOWN)){
-		disp.y = 0;
-	}
-	else{
-		disp.y -= 2;
-	}
-	
-	player->position.x = characterController->getFootPosition().x;
-	player->position.y = characterController->getFootPosition().y;
-	player->position.z = characterController->getFootPosition().z;
+	timeSim += time_delta;
+	if (timeSim >= myTimeStep){
 
-	player->center.x = characterController->getPosition().x;
-	player->center.y = characterController->getPosition().y;
-	player->center.z = characterController->getPosition().z;
+		if (disp.y != 0){
+			disp.x *= 2.0f;
+			disp.z *= 2.0f;
+		}
 
-	camPos = player->center - camDirection * 10.0f;
-	cam->eyeX = camPos.x;
-	cam->eyeY = camPos.y;
-	cam->eyeZ = camPos.z;
 
-	view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
-	
-	disp.x = 0; disp.z = 0;
+		physx::PxControllerCollisionFlags collisionFlags = characterController->move(disp, 0, myTimeStep, filters);
+
+		if ((collisionFlags & physx::PxControllerCollisionFlag::eCOLLISION_DOWN)){
+			disp.y = 0;
+		}
+		else
+		{
+			disp.y -= 0.1f;
+		}
+		StepPhysX();
+			
+
+		player->position.x = characterController->getFootPosition().x;
+		player->position.y = characterController->getFootPosition().y;
+		player->position.z = characterController->getFootPosition().z;
+
+		player->center.x = characterController->getPosition().x;
+		player->center.y = characterController->getPosition().y;
+		player->center.z = characterController->getPosition().z;
+
+		camPos = player->center - camDirection * 10.0f;
+		cam->eyeX = camPos.x;
+		cam->eyeY = camPos.y;
+		cam->eyeZ = camPos.z;
+
+
+		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
+
+		disp.x = 0; disp.z = 0;
+		timeSim -= myTimeStep;
+	}
 }
 
 bool firstMouse = true;
@@ -785,7 +793,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 	if (disp.y == 0){
 		if (key == GLFW_KEY_SPACE && action == GLFW_PRESS){
-			disp.y = 30;
+			disp.y = 1;
 		}
 	}
 	
@@ -811,8 +819,8 @@ void keyboardInput(GLFWwindow* window){
 		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
 		glm::vec4 newDirection = t1 * oldDirection;
 
-		disp.x += 0.5f*newDirection.x;
-		disp.z += 0.5f*newDirection.z;
+		disp.x += 5.0f*newDirection.x * time_delta;
+		disp.z += 5.0f*newDirection.z * time_delta;
 
 
 		player->position.x = characterController->getFootPosition().x;
@@ -839,8 +847,8 @@ void keyboardInput(GLFWwindow* window){
 		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
 		glm::vec4 newDirection = t1 * oldDirection;
 
-		disp.x += 0.5f*newDirection.x;
-		disp.z += 0.5f*newDirection.z;
+		disp.x += 5.0f*newDirection.x * time_delta;
+		disp.z += 5.0f*newDirection.z * time_delta;
 
 		player->position.x = characterController->getFootPosition().x;
 		player->position.y = characterController->getFootPosition().y;
@@ -867,8 +875,8 @@ void keyboardInput(GLFWwindow* window){
 		glm::vec4 newDirection = t1 * oldDirection;
 		//glm::vec3 deltaPos = glm::vec3(characterController->getPosition().x,characterController->getPosition().y, characterController->getPosition().z);
 		
-		disp.x += 0.5f*newDirection.x;
-		disp.z += 0.5f*newDirection.z;
+		disp.x += 5.0f*newDirection.x * time_delta;
+		disp.z += 5.0f*newDirection.z * time_delta;
 
 		//deltaPos = glm::abs(deltaPos-glm::vec3(characterController->getPosition().x, characterController->getPosition().y, characterController->getPosition().z));
 		player->position.x = characterController->getFootPosition().x;
@@ -912,8 +920,8 @@ void keyboardInput(GLFWwindow* window){
 		auto t1 = glm::rotate(glm::mat4(), glm::radians(-yaw), glm::vec3(0, 1, 0));
 		glm::vec4 newDirection = t1 * oldDirection;
 
-		disp.x += 0.5f*newDirection.x;
-		disp.z += 0.5f*newDirection.z;
+		disp.x += 5.0f*newDirection.x * time_delta;
+		disp.z += 5.0f*newDirection.z * time_delta;
 
 		player->position.x = characterController->getFootPosition().x;
 		player->position.y = characterController->getFootPosition().y;

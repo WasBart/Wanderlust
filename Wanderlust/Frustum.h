@@ -1,4 +1,5 @@
 #include <glm\glm.hpp>
+#include <PxPhysicsAPI.h>
 #include "Plane.h"
 
 class Frustum {
@@ -30,4 +31,5 @@ public:
 	void Frustum::drawLines();
 	void Frustum::drawPlanes();
 	void Frustum::drawNormals();
+	int Frustum::boxInFrustum(physx::PxBounds3 bounds);
 };
