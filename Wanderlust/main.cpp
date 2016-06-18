@@ -102,6 +102,7 @@ float timeSim = 0.0f;
 GLfloat near_plane = 0.1f, far_plane = 100.0f;
 physx::PxReal myTimeStep = 1.0f / 60.0f;
 physx::PxVec3 disp;
+boolean isJumping = false;
 
 GLfloat lastX = 400, lastY = 300;
 GLfloat yaw = 0.0f;
@@ -277,30 +278,32 @@ int main(int argc, char** argv){
 	
 	//Creating material
 	//static friction, dynamic friction, restitution
-	physx::PxMaterial* mMaterial = gPhysicsSDK->createMaterial(0.5, 0.5, 0.5);
+	physx::PxMaterial* mMaterial = gPhysicsSDK->createMaterial(0.5, 0.5, 0.0);
 
 	//Creating static plane is floor for now
-	physx::PxTransform planePos = physx::PxTransform(physx::PxVec3(0.0f, 0.0f, 0.0f),
+	/*physx::PxTransform planePos = physx::PxTransform(physx::PxVec3(0.0f, 0.0f, 0.0f),
 		physx::PxQuat(physx::PxHalfPi, physx::PxVec3(0.0f, 0.0f, 1.0f)));
 	physx::PxRigidStatic* plane = gPhysicsSDK->createRigidStatic(planePos);
 	plane->createShape(physx::PxPlaneGeometry(), *mMaterial);
-	gScene->addActor(*plane);
+	gScene->addActor(*plane);*/
 	
 	//2) Create cube  
 	physx::PxReal density = 1.0f;
-	physx::PxTransform transform(physx::PxVec3(0.0f, 10.0f, 0.0f), physx::PxQuat::createIdentity());
-	physx::PxVec3 dimensions(0.5, 0.5, 0.5);
+	physx::PxTransform transform(physx::PxVec3(1.0f, -0.5f, 0.0f), physx::PxQuat::createIdentity());
+	physx::PxVec3 dimensions(10.0f, 0.5f, 10.0f);
 	physx::PxBoxGeometry geometry(dimensions);
-
-	physx::PxRigidDynamic *actor = PxCreateDynamic(*gPhysicsSDK, transform, geometry, *mMaterial, density);
-	actor->setAngularDamping(0.75);
+	physx::PxRigidStatic* cube = gPhysicsSDK->createRigidStatic(transform);
+	cube->createShape(geometry, *mMaterial);
+	gScene->addActor(*cube);
+	/*physx::PxRigidDynamic *actor = PxCreateDynamic(*gPhysicsSDK, transform, geometry, *mMaterial, density);
+	actor->setAngularDamping(0.00);
 	actor->setLinearVelocity(physx::PxVec3(0, 0, 0));
 	if (!actor)
 		std::cerr << "create actor failed!" << std::endl;
-	gScene->addActor(*actor);
+	gScene->addActor(*actor);*/
 
 	//** USE FOR FRUSTUM CULLING; SEEMS TO WORK //*
-	physx::PxBounds3 bounds = actor->getWorldBounds();
+	//physx::PxBounds3 bounds = actor->getWorldBounds();
 
 
 	//create Player
@@ -316,10 +319,12 @@ int main(int argc, char** argv){
 	characterControllerDesc.slopeLimit = 0.5f;
 	characterControllerDesc.stepOffset = 0.01f;
 	characterControllerDesc.climbingMode = physx::PxCapsuleClimbingMode::eCONSTRAINED;
-	characterControllerDesc.position = physx::PxExtendedVec3(player->center.x, player->center.y, player->center.z);
-	characterControllerDesc.contactOffset = 0.05f;
+	characterControllerDesc.position = physx::PxExtendedVec3(player->position.x, player->position.y, player->position.z);
+	//characterControllerDesc.contactOffset = 0.1f;
+	//characterControllerDesc.volumeGrowth = 1.5f;
 	characterControllerDesc.upDirection = physx::PxVec3(0, 1, 0);
 	characterControllerDesc.material = mMaterial;
+
 	//CameraControllerDescription
 
 	
@@ -397,11 +402,7 @@ int main(int argc, char** argv){
 		time = time_new;
 
 		update(time_delta);
-		
-	
-		
-		
-		
+		std::cout << disp.y << std::endl;
 		/*std::cout << "frametime:" << time_delta * 1000 << "ms"
 			<< " =~" << 1.0 / time_delta << "fps" << std::endl;*/
 
@@ -533,7 +534,7 @@ void init(GLFWwindow* window)
 {
 
 	shader = std::make_unique<Shader>("../Shader/basic.vert",
-		"../Shader/basic.frag");
+		"../Shader/toon2.frag");
 	toonShader = std::make_unique<Shader>("../Shader/basic.vert",
 		"../Shader/basic.frag");
 	shadowMapShader = std::make_unique<Shader>("../Shader/shadowMapShader.vert",
@@ -547,8 +548,8 @@ void init(GLFWwindow* window)
 	player = std::make_unique<Model>("../Models/player.dae");
 	plattform = std::make_unique<Model>("../Models/plattform.dae");
 	plattform2 = std::make_unique<Model>("../Models/plattform.dae");
-	//sphere = std::make_unique<Model>("../Models/sphere.dae");
 	path = std::make_unique<Model>("../Models/path.dae");
+	sphere = std::make_unique<Model>("../Models/sphere.dae");
 
 	player->position = glm::vec3(0, 0.5f, 0);
 	view = cam->setUp(player->center);
@@ -602,10 +603,11 @@ void init(GLFWwindow* window)
 	glUniform3f(lightAmbientPos, 0.5f, 0.5f, 0.5f);
 	glUniform3f(lightDiffusePos, 1.0f, 1.0f, 1.0f);
 	glUniform3f(lightSpecularPos, 0.0f, 0.0f, 0.0f);
+	*/
 	glm::vec3 spherePos(-5.0f, 5.0f, -10.0f);
-	/*sphere->position = spherePos;
+	sphere->position = spherePos;
 	sphere->viewMatrix = view;
-	sphere->update();*/
+	sphere->update();
 	
 	//Basic Shader
 	shader->useShader();
@@ -677,8 +679,8 @@ void draw(){
 	player->viewMatrix = view;
 	player->draw(shader.get());
 	
-	/*sphere->viewMatrix = view;
-	sphere->draw(toonShader.get());*/
+	sphere->viewMatrix = view;
+	sphere->draw(toonShader.get());
 
 	path->viewMatrix = view;
 	path->draw(shader.get());
@@ -705,16 +707,20 @@ void update(float time_delta)
 			disp.z *= 2.0f;
 		}
 
-
 		physx::PxControllerCollisionFlags collisionFlags = characterController->move(disp, 0, myTimeStep, filters);
+		
+			if ((collisionFlags & physx::PxControllerCollisionFlag::eCOLLISION_DOWN && isJumping)){
+				disp.y = 0;
+				isJumping = false;
+				std::cout << "true" << std::endl;
+			}
+			else
+			{
+				disp.y -= 0.1f;
+				std::cout << "false" << std::endl;
+			}
+		
 
-		if ((collisionFlags & physx::PxControllerCollisionFlag::eCOLLISION_DOWN)){
-			disp.y = 0;
-		}
-		else
-		{
-			disp.y -= 0.1f;
-		}
 		StepPhysX();
 			
 
@@ -791,13 +797,15 @@ void mouseMovementPoll(GLFWwindow* window, double xpos, double ypos)
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
 
-	if (disp.y == 0){
+	
 		if (key == GLFW_KEY_SPACE && action == GLFW_PRESS){
-			disp.y = 1;
+			if (!isJumping){
+				disp.y = 1;
+				isJumping = true;
+			}
 		}
 	}
-	
-}
+
 
 void keyboardInput(GLFWwindow* window){
 	const physx::PxControllerFilters filters(NULL, NULL, NULL);
@@ -958,7 +966,7 @@ void renderShadowMap(){
 	player->draw(shadowMapShader.get());
 
 
-	//sphere->draw(shadowMapShader.get());
+	sphere->draw(shadowMapShader.get());
 
 	path->viewMatrix = view;
 	path->draw(shadowMapShader.get());
