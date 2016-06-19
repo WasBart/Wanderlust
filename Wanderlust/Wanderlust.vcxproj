@@ -92,6 +92,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Model.cpp" />
+    <ClCompile Include="ParticleSystem.cpp" />
     <ClCompile Include="Plane.cpp" />
     <ClCompile Include="shader.cpp" />
   </ItemGroup>
@@ -100,6 +101,7 @@
     <ClInclude Include="Frustum.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Model.h" />
+    <ClInclude Include="ParticleSystem.h" />
     <ClInclude Include="Plane.h" />
     <ClInclude Include="shader.h" />
   </ItemGroup>
@@ -108,6 +110,9 @@
     <None Include="..\Shader\basic.vert" />
     <None Include="..\Shader\debugDepthQuad.frag" />
     <None Include="..\Shader\debugDepthQuad.vert" />
+    <None Include="..\Shader\particle.comp" />
+    <None Include="..\Shader\particle.frag" />
+    <None Include="..\Shader\particle.vert" />
     <None Include="..\Shader\shadowMapShader.fragment" />
     <None Include="..\Shader\shadowMapShader.vert" />
     <None Include="..\Shader\sun.frag" />
