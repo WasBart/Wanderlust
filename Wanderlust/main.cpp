@@ -36,6 +36,7 @@
 #include "Model.h"
 #include "Mesh.h"
 #include "Camera.h"
+#include "ParticleSystem.h"
 
 
 
@@ -84,6 +85,7 @@ std::unique_ptr<Model> plattform;
 std::unique_ptr<Model> plattform2;
 std::unique_ptr<Model> sphere;
 std::unique_ptr<Model> path;
+std::unique_ptr<ParticleSystem> parSys;
 
 glm::mat4 persp;
 glm::mat4 view;
@@ -570,7 +572,8 @@ void init(GLFWwindow* window)
 	plattform2->position = glm::vec3(-5.0f, 3.0f, 0);
 	plattform2->viewMatrix = view;
 
-
+	parSys = std::make_unique<ParticleSystem>();
+	parSys->initialize(player->center);
 	
 
 	//ToonShader
@@ -673,7 +676,8 @@ void cleanup()
 	
 }
 void draw(){
-
+	glm::mat4x4 mvp = projection * view;
+	parSys->draw(glm::vec3(0.0, 0.0, 0.0), mvp);
 
 	shader->useShader();
 	
