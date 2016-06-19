@@ -5,8 +5,10 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
-#define NUM_PARTICLES 1024*1024
-#define WORK_GROUP_SIZE 128
+#include <cstdlib>
+#include <ctime>
+#define NUM_PARTICLES 16*5
+#define WORK_GROUP_SIZE 16
 
 struct Pstruct
 {
@@ -24,9 +26,10 @@ void ParticleSystem::initialize(glm::vec3 &playerPos)
 
 	GLint bufMask = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT;
 
-	std::cout << playerPos.x << " " << playerPos.y << " " << playerPos.z << "\n";
+	//std::cout << playerPos.x << " " << playerPos.y << " " << playerPos.z << "\n";
 
 	struct Pstruct *par = (struct Pstruct *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,0,NUM_PARTICLES * sizeof(struct Pstruct),bufMask);
+	srand(time(0));
 	for (int i = 0; i < NUM_PARTICLES; i++)
 	{
 		/*par[i].x = playerPos.x;
@@ -39,15 +42,17 @@ void ParticleSystem::initialize(glm::vec3 &playerPos)
 
 		par[i].lx = 1000.0;*/
 
-		par[i].x = playerPos.x;
-		par[i].y = playerPos.y;
-		par[i].z = playerPos.z;
+		par[i].x = 1;
+		par[i].y = 1;
+		par[i].z = 1;
 
-		par[i].vx = 0.00;
-		par[i].vy = 0.1;
-		par[i].vz = 0.00;
+		par[i].vx = (rand() / (float)RAND_MAX * 1.0) * (rand() % 2 == 0 ? -1.0 : 1.0);
+		par[i].vy = (rand() / (float)RAND_MAX * 1.0) * (rand() % 2 == 0 ? -1.0 : 1.0);
+		par[i].vz = (rand() / (float)RAND_MAX * 1.0) * (rand() % 2 == 0 ? -1.0 : 1.0);
 
-		par[i].lx = 1000.0;
+		//std::cout << "x-velocity: " << par[i].vx << " y-velocity: " << par[i].vy << " z-velocity: " << par[i].vz << std::endl;
+
+		par[i].lx = 10.0;
 	}
 	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
@@ -134,6 +139,8 @@ void ParticleSystem::initialize(glm::vec3 &playerPos)
 		// Load shader programs for rendering
 		renderShader = std::make_unique<cgue::Shader>("../Shader/particle.vert",
 			"../Shader/particle.frag");
+		timer = 0;
+		oldTime = glfwGetTime();
 	}
 	else{
 		std::cerr << "Failed to open shader file " << "../Shader/particle.comp" << std::endl;
@@ -145,6 +152,8 @@ void ParticleSystem::initialize(glm::vec3 &playerPos)
 void ParticleSystem::draw(glm::vec3 &playerPos, glm::mat4x4 &mvp)
 {
 	glUseProgram(programHandle);
+	timer = (glfwGetTime() - oldTime) * 0.0001;
+	glUniform1f(4, timer);
 	glDispatchCompute(NUM_PARTICLES / WORK_GROUP_SIZE, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 

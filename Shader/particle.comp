@@ -14,13 +14,19 @@ layout(std430, binding=0) buffer Particles
 
 layout( local_size_x = 128, local_size_y = 1, local_size_z = 1 ) in;
 
+layout(location = 4) uniform float time;
+
+float rand(vec2 co){
+return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453) - 0.5;
+}
+
 void main(void)
 {
 	uint pid = gl_GlobalInvocationID.x;
 
-	particles[pid].position.x += particles[pid].velocity.x;  
-	particles[pid].position.y += particles[pid].velocity.y;
-	particles[pid].position.z += particles[pid].velocity.z;
+	particles[pid].position.x = clamp(particles[pid].position.x + particles[pid].velocity.x  * rand(vec2(time,pid)) * time, 0.0, 2.0);  
+	particles[pid].position.y = clamp(particles[pid].position.y + particles[pid].velocity.y  * rand(vec2(time,pid)) * time, 0.0, 2.0);
+	particles[pid].position.z = clamp(particles[pid].position.z + particles[pid].velocity.z  * rand(vec2(time,pid)) * time, 0.0, 2.0);
 
-	particles[pid].lifespan.x -= 0.1;
+	particles[pid].lifespan.x = max(10 - time, 0);
 }

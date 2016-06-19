@@ -11,5 +11,5 @@ void main()
 {
 	fragLifespan = lifespan;
 	gl_Position = mvp * vec4(position, 1.0);
-	gl_PointSize = 150;
+	gl_PointSize = 2;
 }
