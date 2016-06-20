@@ -37,6 +37,7 @@
 #include "Mesh.h"
 #include "Camera.h"
 #include "ParticleSystem.h"
+#include "Contour.h"
 
 
 
@@ -86,6 +87,7 @@ std::unique_ptr<Model> plattform2;
 std::unique_ptr<Model> sphere;
 std::unique_ptr<Model> path;
 std::unique_ptr<ParticleSystem> parSys;
+std::unique_ptr<Contour> contour;
 
 glm::mat4 persp;
 glm::mat4 view;
@@ -541,7 +543,7 @@ void init(GLFWwindow* window)
 	shader = std::make_unique<Shader>("../Shader/basic.vert",
 		"../Shader/basic.frag");
 	toonShader = std::make_unique<Shader>("../Shader/basic.vert",
-		"../Shader/basic.frag");
+		"../Shader/toon2.frag");
 	shadowMapShader = std::make_unique<Shader>("../Shader/shadowMapShader.vert",
 		"../Shader/shadowMapShader.fragment");
 	debugDepthQuad = std::make_unique<Shader>("../Shader/debugDepthQuad.vert", "../Shader/debugDepthQuad.frag");
@@ -574,6 +576,9 @@ void init(GLFWwindow* window)
 
 	parSys = std::make_unique<ParticleSystem>();
 	parSys->initialize(player->center);
+
+	contour = std::make_unique<Contour>();
+	contour->initialize(width, height);
 	
 
 	//ToonShader
@@ -676,14 +681,16 @@ void cleanup()
 	
 }
 void draw(){
-	glm::mat4x4 mvp = projection * view;
-	parSys->draw(glm::vec3(0.0, 0.0, 0.0), mvp);
-
 	shader->useShader();
 	
 
 	player->viewMatrix = view;
+
+	contour->activate();
 	player->draw(shader.get());
+	contour->deactivate();
+
+	shader->useShader();
 	
 	/*sphere->viewMatrix = view;
 	sphere->draw(toonShader.get());*/
@@ -695,6 +702,9 @@ void draw(){
 	plattform->draw(shader.get());
 	plattform2->viewMatrix = view;
 	plattform2->draw(shader.get());
+
+	glm::mat4x4 mvp = projection * view;
+	parSys->draw(glm::vec3(0.0, 0.0, 0.0), mvp);
 
 		
 
