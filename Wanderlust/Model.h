@@ -11,9 +11,8 @@
 class Model
 {
 public:
-	
 	Model(std::string path, std::vector<GLuint> *textures);
-	void draw(cgue::Shader* shader);
+	void draw();
 	GLuint Model::loadTexture(std::string filePath);
 	void update();
 	glm::vec3 position = glm::vec3(0,0,0);
