@@ -12,7 +12,7 @@ class Model
 {
 public:
 	
-	Model(std::string path);
+	Model(std::string path, std::vector<GLuint> *textures);
 	void draw(cgue::Shader* shader);
 	GLuint Model::loadTexture(std::string filePath);
 	void update();
@@ -28,6 +28,7 @@ private:
 	
 	std::vector<Mesh> meshes;
 	std::string directory;
+	std::vector<GLuint> *textures;
 	
 	void loadModel(std::string path);
 	void processNode(aiNode* node, const aiScene* scene);

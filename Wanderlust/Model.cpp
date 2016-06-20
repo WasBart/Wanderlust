@@ -6,10 +6,12 @@
 #include <glm\glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-Model::Model(std::string path)
+Model::Model(std::string path, std::vector<GLuint> *textures)
 {
+	this->textures = textures;
 	this->loadModel(path);
 };
+
 /*
 Drawing all Meshes from this Model
 */
@@ -213,6 +215,7 @@ GLuint Model::loadTexture(std::string filePath)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glGenerateMipmap(GL_TEXTURE_2D);
+	textures->push_back(textureHandle);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	return textureHandle;
 }

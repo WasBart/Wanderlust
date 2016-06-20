@@ -39,6 +39,7 @@
 #include "Frustum.h"
 #include "ParticleSystem.h"
 #include "Contour.h"
+#include "TextRenderer.h"
 
 
 using namespace cgue;
@@ -94,7 +95,9 @@ std::unique_ptr<Model> path;
 std::unique_ptr<Model> island;
 std::unique_ptr<Model> island2;
 
+std::unique_ptr<TextRenderer> text;
 
+std::vector<GLuint> textures;
 
 //Border Array
 
@@ -120,11 +123,19 @@ float time_delta;
 float timeSim = 0.0f;
 GLuint singleColorLoc;
 
+std::string textMessage = "";
+float messageTimer = 0.0;
+
 GLfloat near_plane = 0.1f, far_plane = 100.0f;
 physx::PxReal myTimeStep = 1.0f / 60.0f;
 physx::PxVec3 disp;
 boolean isJumping = false;
 boolean frustumOn = true;
+boolean frametimeOn = true;
+boolean wireframeOn = false;
+boolean texfilterOn = true;
+int mipmapsOn = 0;
+boolean transparencyOn = true;
 
 GLfloat lastX = 400, lastY = 300;
 GLfloat yaw = 0.0f;
@@ -554,13 +565,13 @@ void init(GLFWwindow* window)
 
 	//cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
 	cam = std::make_unique<Camera>(0.0f, 0.0f, 0.0f);
-	player = std::make_unique<Model>("../Models/player.dae");
-	platform = std::make_unique<Model>("../Models/platform.dae");
-	plattform2 = std::make_unique<Model>("../Models/plattform.dae");
-	path = std::make_unique<Model>("../Models/path.dae");
-	sphere = std::make_unique<Model>("../Models/sphere.dae");
-	island = std::make_unique<Model>("../Models/island.dae");
-	island2 = std::make_unique<Model>("../Models/island.dae");
+	player = std::make_unique<Model>("../Models/player.dae", &textures);
+	platform = std::make_unique<Model>("../Models/platform.dae", &textures);
+	plattform2 = std::make_unique<Model>("../Models/plattform.dae", &textures);
+	path = std::make_unique<Model>("../Models/path.dae", &textures);
+	sphere = std::make_unique<Model>("../Models/sphere.dae", &textures);
+	island = std::make_unique<Model>("../Models/island.dae", &textures);
+	island2 = std::make_unique<Model>("../Models/island.dae", &textures);
 
 	//Borders
 
@@ -674,6 +685,7 @@ void init(GLFWwindow* window)
 	
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
+	text = std::make_unique<TextRenderer>();
 }
 
 
@@ -698,6 +710,25 @@ void cleanup()
 	//sphere.reset(nullptr);
 	
 }
+
+void print_fps()
+{
+	if (frametimeOn) {
+		float frametime = time_delta * 1000;
+		float fps = 1.0 / time_delta;
+		std::string frames = "Frametime: " + std::to_string(frametime) + " ms =~ " + std::to_string(fps) + " fps";
+		text->drawText(frames, 10, height - 25.0f, 0.4f);
+	}
+}
+
+void print_message()
+{
+	if (messageTimer > 0) {
+		text->drawText(textMessage, 10, height - 50.0f, 0.4f);
+		messageTimer -= time_delta;
+	}
+}
+
 void draw(){
 	/*
 	shader->useShader();
@@ -777,6 +808,11 @@ void draw(){
 	// Draw particle system
 	parSys->draw(mvp);
 
+	// Draw all texts
+	print_fps();
+	print_message();
+
+	// Draw contour
 	contour->draw();
 	shader->useShader();
 }
@@ -884,17 +920,110 @@ void mouseMovementPoll(GLFWwindow* window, double xpos, double ypos)
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
 
-	
-		if (key == GLFW_KEY_SPACE && action == GLFW_PRESS){
-			if (!isJumping){
-				disp.y = 1;
-				isJumping = true;
-			}
-		}
-		if (key == GLFW_KEY_F8 && action == GLFW_PRESS){
-			frustumOn = !frustumOn;
+
+	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS){
+		if (!isJumping){
+			disp.y = 1;
+			isJumping = true;
 		}
 	}
+	if (key == GLFW_KEY_F8 && action == GLFW_PRESS){
+		frustumOn = !frustumOn;
+		if (frustumOn) {
+			textMessage = "Frustum-Culling: On";
+			messageTimer = 2.0f;
+		}
+		else {
+			textMessage = "Frustum-Culling: Off";
+			messageTimer = 2.0f;
+		}
+	}
+	if (key == GLFW_KEY_F2 && action == GLFW_PRESS) {
+		frametimeOn = !frametimeOn;
+	}
+	if (key == GLFW_KEY_F3 && action == GLFW_PRESS) {
+		wireframeOn = !wireframeOn;
+		if (wireframeOn) {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			glDisable(GL_CULL_FACE);
+			textMessage = "Wireframe: On";
+			messageTimer = 2.0f;
+		}
+		else {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			glEnable(GL_CULL_FACE);
+			textMessage = "Wireframe: Off";
+			messageTimer = 2.0f;
+		}
+	}
+	if (key == GLFW_KEY_F4 && action == GLFW_PRESS) {
+		texfilterOn = !texfilterOn;
+		if (texfilterOn) {
+			textMessage = "Texture-Filterung: Bilinear";
+			messageTimer = 2.0f;
+
+			for (int i = 0; i < textures.size(); i++) {
+				glBindTexture(GL_TEXTURE_2D, i);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			}
+		}
+		else {
+			textMessage = "Texture-Filtering: Nearest Neighbour";
+			messageTimer = 2.0f;
+
+			for (int i = 0; i < textures.size(); i++) {
+				glBindTexture(GL_TEXTURE_2D, i);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			}
+		}
+	}
+	if (key == GLFW_KEY_F5 && action == GLFW_PRESS) {
+		mipmapsOn = (mipmapsOn + 1) % 3;
+		if (mipmapsOn == 0) {
+			textMessage = "Mipmaps: Linear";
+			messageTimer = 2.0f;
+
+			for (int i = 0; i < textures.size(); i++) {
+				glBindTexture(GL_TEXTURE_2D, i);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			}
+		}
+		else if (mipmapsOn == 1) {
+			textMessage = "Mipmaps: Nearest Neighbour";
+			messageTimer = 2.0f;
+
+			for (int i = 0; i < textures.size(); i++) {
+				glBindTexture(GL_TEXTURE_2D, i);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			}
+		}
+		else {
+			textMessage = "Mipmaps: Off";
+			messageTimer = 2.0f;
+
+			for (int i = 0; i < textures.size(); i++) {
+				glBindTexture(GL_TEXTURE_2D, i);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			}
+		}
+	}
+	if (key == GLFW_KEY_F9 && action == GLFW_PRESS) {
+		transparencyOn = !transparencyOn;
+		if (transparencyOn) {
+			textMessage = "Transparency: On";
+			messageTimer = 2.0f;
+		}
+		else {
+			textMessage = "Transparency: Off";
+			messageTimer = 2.0f;
+		}
+	}
+}
 
 
 void keyboardInput(GLFWwindow* window){

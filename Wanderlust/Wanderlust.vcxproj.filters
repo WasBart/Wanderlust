@@ -48,6 +48,9 @@
     <ClCompile Include="Contour.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TextRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="shader.h">
@@ -72,6 +75,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Contour.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TextRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -116,6 +122,12 @@
       <Filter>Shader</Filter>
     </None>
     <None Include="..\Shader\contour.frag">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="..\Shader\text.vert">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="..\Shader\text.frag">
       <Filter>Shader</Filter>
     </None>
   </ItemGroup>
