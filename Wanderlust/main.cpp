@@ -780,7 +780,7 @@ void update(float time_delta)
 		cam->eyeZ = camPos.z;
 
 		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
-		//frustum.setCamDef(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center, cam->up);
+		frustum.setCamDef(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center, cam->up);
 
 		disp.x = 0; disp.z = 0;
 		timeSim -= myTimeStep;
@@ -833,6 +833,7 @@ void mouseMovementPoll(GLFWwindow* window, double xpos, double ypos)
 	cam->eyeY = eye.y;
 	cam->eyeZ = eye.z;
 	view = cam->useUp(eye.xyz(), player->center, camUp.xyz());
+	frustum.setCamDef(eye.xyz(), player->center, camUp.xyz());
 	
 	GLint model_view = glGetUniformLocation(shader->programHandle, "view");
 	glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
@@ -890,7 +891,7 @@ void keyboardInput(GLFWwindow* window){
 		cam->eyeZ = camPos.z;
 
 		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
-		//frustum.setCamDef(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center, cam->up);
+		frustum.setCamDef(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center, cam->up);
 
 	}
 	else if (glfwGetKey(window, GLFW_KEY_S))
@@ -918,7 +919,7 @@ void keyboardInput(GLFWwindow* window){
 		cam->eyeZ = camPos.z;
 
 		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
-		//frustum.setCamDef(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center, cam->up);
+		frustum.setCamDef(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center, cam->up);
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_A)){
@@ -948,7 +949,7 @@ void keyboardInput(GLFWwindow* window){
 		cam->eyeZ = camPos.z;
 
 		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
-		//frustum.setCamDef(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center, cam->up);
+		frustum.setCamDef(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center, cam->up);
 
 		/*player->position.x -= 10 * time_delta;
 
@@ -992,7 +993,7 @@ void keyboardInput(GLFWwindow* window){
 		cam->eyeZ = camPos.z;
 
 		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
-		//frustum.setCamDef(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center, cam->up);
+		frustum.setCamDef(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center, cam->up);
 
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT))
