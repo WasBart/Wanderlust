@@ -81,17 +81,23 @@ std::unique_ptr<Shader> toonShader;
 std::unique_ptr<Shader> debugDepthQuad;
 
 
+
 std::unique_ptr<Camera> cam;
+
+std::vector<std::unique_ptr<Model>> models;
 std::unique_ptr<Model> player;
-std::unique_ptr<Model> plattform;
+std::unique_ptr<Model> platform;
 std::unique_ptr<Model> plattform2;
 std::unique_ptr<Model> sphere;
 std::unique_ptr<Model> path;
 std::unique_ptr<Model> island;
 std::unique_ptr<Model> island2;
 
-//Border
 
+
+//Border Array
+
+std::vector<physx::PxRigidStatic*> boundaries;
 physx::PxRigidStatic* cube2;
 
 glm::mat4 persp;
@@ -112,6 +118,7 @@ GLfloat near_plane = 0.1f, far_plane = 100.0f;
 physx::PxReal myTimeStep = 1.0f / 60.0f;
 physx::PxVec3 disp;
 boolean isJumping = false;
+boolean frustumOn = true;
 
 GLfloat lastX = 400, lastY = 300;
 GLfloat yaw = 0.0f;
@@ -247,34 +254,11 @@ int main(int argc, char** argv){
 
 	init(window);
 	initPhysX();
-
-	  GLfloat planeVertices[] = {
-        // Positions          // Normals         // Texture Coords
-        25.0f, -0.5f, 25.0f, 0.0f, 1.0f, 0.0f, 25.0f, 0.0f,
-        -25.0f, -0.5f, -25.0f, 0.0f, 1.0f, 0.0f, 0.0f, 25.0f,
-        -25.0f, -0.5f, 25.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-
-        25.0f, -0.5f, 25.0f, 0.0f, 1.0f, 0.0f, 25.0f, 0.0f,
-        25.0f, -0.5f, -25.0f, 0.0f, 1.0f, 0.0f, 25.0f, 25.0f,
-        - 25.0f, -0.5f, -25.0f, 0.0f, 1.0f, 0.0f, 0.0f, 25.0f
-    };
-
-	GLuint planeVBO;
-	glGenVertexArrays(1, &planeVAO);
-	glGenBuffers(1, &planeVBO);
-	glBindVertexArray(planeVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, planeVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices), &planeVertices, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
-	glBindVertexArray(0);
-
-
-
+	/*models.push_back(player);
+	models.push_back(sphere);
+	models.push_back(island);
+	models.push_back(island2);*/
+	  
 	//Creating scene
 	physx::PxSceneDesc sceneDesc(gPhysicsSDK->getTolerancesScale());
 
@@ -358,7 +342,7 @@ int main(int argc, char** argv){
 	pos.z = characterController->getPosition().z;
 	eye = pos - camDirection * 10.0f;
 	view = cam->update(eye, pos);
-	frustum.setCamDef(eye, pos, cam->up);
+	frustum.setCamDef(eye, pos, glm::vec3(camUp.x, camUp.y, camUp.z));
 
 
 	player->position.x = characterController->getFootPosition().x;	
@@ -464,7 +448,7 @@ int main(int argc, char** argv){
 
 
 		rad += (glm::pi<float>() / 180.0f) * 20 * time_delta;
-	    plattform->position = glm::vec3(5, 0, sin(rad) * 10.0f);
+	    platform->position = glm::vec3(5, 0, sin(rad) * 10.0f);
 		
 		
 		plattform2->angle = 2*rad;
@@ -565,7 +549,7 @@ void init(GLFWwindow* window)
 	//cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
 	cam = std::make_unique<Camera>(0.0f, 0.0f, 0.0f);
 	player = std::make_unique<Model>("../Models/player.dae");
-	plattform = std::make_unique<Model>("../Models/plattform.dae");
+	platform = std::make_unique<Model>("../Models/platform.dae");
 	plattform2 = std::make_unique<Model>("../Models/plattform.dae");
 	path = std::make_unique<Model>("../Models/path.dae");
 	sphere = std::make_unique<Model>("../Models/sphere.dae");
@@ -583,8 +567,8 @@ void init(GLFWwindow* window)
 	path->position = glm::vec3(0, -1.0f, 5.0f);
 	path->scale = glm::vec3(10.0f, 1.0f, 10.0f);
 	
-	plattform->position = glm::vec3(5.0f, -1.0f, 0);
-	plattform->viewMatrix = view;
+	platform->position = glm::vec3(5.0f, 4.0f, 0);
+	platform->viewMatrix = view;
 
 
 	plattform2->position = glm::vec3(-5.0f, 3.0f, 0);
@@ -717,20 +701,28 @@ void draw(){
 
 	island->viewMatrix = view;
 	island->draw(shader.get());
+	
+	if (frustumOn){
+		physx::PxBounds3 bounds = cube2->getWorldBounds();
 
-	physx::PxBounds3 bounds = cube2->getWorldBounds();
-	if (frustum.boxInFrustum(bounds) != Frustum::OUTSIDE){
+		if (frustum.boxInFrustum(bounds) != Frustum::OUTSIDE) {
+			island2->viewMatrix = view;
+			island2->draw(shader.get());
+		}
+	}
+	else{
 		island2->viewMatrix = view;
 		island2->draw(shader.get());
 	}
+	
 	
 	
 
 	//path->viewMatrix = view;
 	//path->draw(shader.get());
 	
-	plattform->viewMatrix = view;
-	plattform->draw(shader.get());
+	platform->viewMatrix = view;
+	platform->draw(shader.get());
 	plattform2->viewMatrix = view;
 	plattform2->draw(shader.get());
 
@@ -847,6 +839,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 				disp.y = 1;
 				isJumping = true;
 			}
+		}
+		if (key == GLFW_KEY_F8 && action == GLFW_PRESS){
+			frustumOn = !frustumOn;
 		}
 	}
 
@@ -1018,7 +1013,7 @@ void renderShadowMap(){
 	//path->viewMatrix = view;
 	//path->draw(shadowMapShader.get());
 
-	plattform->draw(shadowMapShader.get());
+	platform->draw(shadowMapShader.get());
 
 	plattform2->draw(shadowMapShader.get());
 }

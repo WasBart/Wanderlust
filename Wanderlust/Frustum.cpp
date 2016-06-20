@@ -36,10 +36,10 @@ void Frustum::setCamDef(glm::vec3 &p, glm::vec3 &l, glm::vec3 &u) {
 	Z = p - l;
 	Z = glm::normalize(Z);
 
-	X = u * Z;
+	X = glm::cross(u,Z);
 	X = glm::normalize(X);
 
-	Y = Z * X;
+	Y = glm::cross(Z,X);
 
 	nc = p - Z * nearD;
 	fc = p - Z * farD;
@@ -78,17 +78,14 @@ int Frustum::pointInFrustum(glm::vec3 &p) {
 int Frustum::boxInFrustum(physx::PxBounds3 bounds){
 	int result = INSIDE, out, in;
 
-	corner[0]  = glm::vec3(bounds.minimum.x, bounds.minimum.y, bounds.minimum.z);
-	corner[1] = glm::vec3(bounds.minimum.x, bounds.maximum.y, bounds.minimum.z);
-	corner[2] = glm::vec3(bounds.maximum.x, bounds.minimum.y, bounds.minimum.z);
-	corner[3] = glm::vec3(bounds.maximum.x, bounds.maximum.y, bounds.minimum.z);
-	corner[4] = glm::vec3(bounds.minimum.x, bounds.minimum.y, bounds.maximum.z);
-	corner[5] = glm::vec3(bounds.minimum.x, bounds.maximum.y, bounds.maximum.z);
-	corner[6] = glm::vec3(bounds.maximum.x, bounds.minimum.y, bounds.maximum.z);
-	corner[7] = glm::vec3(bounds.maximum.x, bounds.maximum.y, bounds.maximum.z);
-
-	
-
+	corner[0]  = glm::vec3(bounds.minimum.x, bounds.minimum.y, bounds.maximum.z);
+	corner[1] = glm::vec3(bounds.minimum.x, bounds.maximum.y, bounds.maximum.z);
+	corner[2] = glm::vec3(bounds.maximum.x, bounds.minimum.y, bounds.maximum.z);
+	corner[3] = glm::vec3(bounds.maximum.x, bounds.maximum.y, bounds.maximum.z);
+	corner[4] = glm::vec3(bounds.minimum.x, bounds.minimum.y, bounds.minimum.z);
+	corner[5] = glm::vec3(bounds.minimum.x, bounds.maximum.y, bounds.minimum.z);
+	corner[6] = glm::vec3(bounds.maximum.x, bounds.minimum.y, bounds.minimum.z);
+	corner[7] = glm::vec3(bounds.maximum.x, bounds.maximum.y, bounds.minimum.z);
 
 	for (int i = 0; i < 6; i++) {
 
