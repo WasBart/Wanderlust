@@ -184,7 +184,7 @@ std::vector<GLuint> Model::loadMaterialTextures(aiMaterial* mat)
 
 GLuint Model::loadTexture(std::string filePath)
 {
-	GLuint textureHandle;
+	GLuint textureHandle = 0;
 	filePath.insert(0, std::string("../Textures/"));
 	//std::cout << filePath << std::endl;
 	auto bitMap = FreeImage_Load(FIF_PNG, filePath.c_str());
@@ -208,10 +208,11 @@ GLuint Model::loadTexture(std::string filePath)
 	}
 	FreeImage_Unload(bitMap);
 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-		GL_LINEAR_MIPMAP_LINEAR);
 	glGenerateMipmap(GL_TEXTURE_2D);
-
+	glBindTexture(GL_TEXTURE_2D, 0);
 	return textureHandle;
 }

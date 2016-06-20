@@ -2,6 +2,7 @@
 #include <glm\glm.hpp>
 #include "Frustum.h"
 #include <PxPhysicsAPI.h> 
+#include <iostream>
 
 #define ANG2RAD 3.14159265358979323846/180.0
 
@@ -77,65 +78,38 @@ int Frustum::pointInFrustum(glm::vec3 &p) {
 int Frustum::boxInFrustum(physx::PxBounds3 bounds){
 	int result = INSIDE, out, in;
 
-	// for each plane do ...
+	corner[0]  = glm::vec3(bounds.minimum.x, bounds.minimum.y, bounds.minimum.z);
+	corner[1] = glm::vec3(bounds.minimum.x, bounds.maximum.y, bounds.minimum.z);
+	corner[2] = glm::vec3(bounds.maximum.x, bounds.minimum.y, bounds.minimum.z);
+	corner[3] = glm::vec3(bounds.maximum.x, bounds.maximum.y, bounds.minimum.z);
+	corner[4] = glm::vec3(bounds.minimum.x, bounds.minimum.y, bounds.maximum.z);
+	corner[5] = glm::vec3(bounds.minimum.x, bounds.maximum.y, bounds.maximum.z);
+	corner[6] = glm::vec3(bounds.maximum.x, bounds.minimum.y, bounds.maximum.z);
+	corner[7] = glm::vec3(bounds.maximum.x, bounds.maximum.y, bounds.maximum.z);
+
+	
+
+
 	for (int i = 0; i < 6; i++) {
 
-		// reset counters for corners in and out
+	
 		out = 0; in = 0;
-		// for each corner of the box do ...
-		// get out of the cycle as soon as a box as corners
-		// both inside and out of the frustum
-		glm::vec3 bottomLeftNear = glm::vec3(bounds.minimum.x, bounds.minimum.y, bounds.minimum.z);
-		glm::vec3 topLeftNear = glm::vec3(bounds.minimum.x, bounds.maximum.y, bounds.minimum.z);
-		glm::vec3 bottomRightNear = glm::vec3(bounds.maximum.x, bounds.minimum.y, bounds.minimum.z);
-		glm::vec3 topRightNear = glm::vec3(bounds.maximum.x, bounds.maximum.y, bounds.minimum.z);
-		glm::vec3 bottomLeftFar = glm::vec3(bounds.minimum.x, bounds.minimum.y, bounds.maximum.z);
-		glm::vec3 topLeftFar = glm::vec3(bounds.minimum.x, bounds.maximum.y, bounds.maximum.z);
-		glm::vec3 bottomRightFar = glm::vec3(bounds.maximum.x, bounds.minimum.y, bounds.maximum.z);
-		glm::vec3 topRightFar = glm::vec3(bounds.maximum.x, bounds.maximum.y, bounds.maximum.z);
 
-			// is the corner outside or inside
-			if (pl[i].distance(bottomLeftNear) < 0)
+		for (int k = 0; k < 8 && (in == 0 || out == 0); k++) {
+
+			if (pl[i].distance(corner[k]) < 0)
 				out++;
 			else
 				in++;
-			if (pl[i].distance(topLeftNear) < 0)
-				out++;
-			else
-				in++;
-			if (pl[i].distance(bottomRightNear) < 0)
-				out++;
-			else
-				in++;
-			if (pl[i].distance(topRightNear) < 0)
-				out++;
-			else
-				in++;
-			if (pl[i].distance(bottomLeftFar) < 0)
-				out++;
-			else
-				in++;
-			if (pl[i].distance(topLeftFar) < 0)
-				out++;
-			else
-				in++;
-			if (pl[i].distance(bottomRightFar) < 0)
-				out++;
-			else
-				in++;
-			if (pl[i].distance(bottomRightNear) < 0)
-				out++;
-			else
-				in++;
-		
-		//if all corners are out
+		}
+	
 		if (!in)
 			return (OUTSIDE);
-		// if some corners are out and others are in
+	
 		else if (out)
 			result = INTERSECT;
+	}
 	return(result);
-}
 }
 
 

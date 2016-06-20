@@ -15,6 +15,7 @@ public:
 
 	static enum { OUTSIDE, INTERSECT, INSIDE };
 	Plane pl[6];
+	glm::vec3 corner[8];
 	glm::vec3 ntl, ntr, nbr, nbl, ftl, ftr, fbl, fbr;
 	float nearD, farD, ratio, angle, tang;
 	float nw, nh, fw, fh;

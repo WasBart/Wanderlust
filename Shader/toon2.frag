@@ -56,7 +56,7 @@ void main()
 	vec3 norm = normalize(worldNormal);
     vec3 lightDir = normalize(light.direction);
 	float diff = max(dot(norm, lightDir), 0.0);
-	diff = floor(diff * levels) / levels;
+	diff = floor(diff * levels)/ levels;
 	vec3 diffuse = diff * light.diffuse;
 	
   

@@ -36,6 +36,7 @@
 #include "Model.h"
 #include "Mesh.h"
 #include "Camera.h"
+#include "Frustum.h"
 
 
 
@@ -54,6 +55,8 @@ physx::PxScene* gScene = NULL;
 physx::PxControllerManager* manager;
 physx::PxCapsuleControllerDesc characterControllerDesc;
 physx::PxController* characterController;
+
+Frustum frustum;
 
 //Function prototypes
 void init(GLFWwindow* window);
@@ -84,6 +87,12 @@ std::unique_ptr<Model> plattform;
 std::unique_ptr<Model> plattform2;
 std::unique_ptr<Model> sphere;
 std::unique_ptr<Model> path;
+std::unique_ptr<Model> island;
+std::unique_ptr<Model> island2;
+
+//Border
+
+physx::PxRigidStatic* cube2;
 
 glm::mat4 persp;
 glm::mat4 view;
@@ -111,7 +120,7 @@ GLuint depthMap;
 glm::vec4 camUp = glm::vec4(0.0f,1.0f,0.0f,1.0f);
 
 // Light source
-glm::vec3 lightPos(-2.0f, 8.0f, -2.0f);
+glm::vec3 lightPos(-2.0f, 8.0f, 2.0f);
 
 
 int main(int argc, char** argv){
@@ -289,12 +298,21 @@ int main(int argc, char** argv){
 	
 	//2) Create cube  
 	physx::PxReal density = 1.0f;
-	physx::PxTransform transform(physx::PxVec3(1.0f, -0.5f, 0.0f), physx::PxQuat::createIdentity());
-	physx::PxVec3 dimensions(10.0f, 0.5f, 10.0f);
+	physx::PxTransform transform(physx::PxVec3(0.0f, -(glm::abs(island->minVector.y) + glm::abs(island->maxVector.y)), 0.0f), physx::PxQuat::createIdentity());
+	physx::PxVec3 dimensions(5*(glm::abs(island->minVector.x) + glm::abs(island->maxVector.x)),  glm::abs(island->minVector.y) + glm::abs(island->maxVector.y), 5*(glm::abs(island->minVector.z) + glm::abs(island->maxVector.z)));
 	physx::PxBoxGeometry geometry(dimensions);
 	physx::PxRigidStatic* cube = gPhysicsSDK->createRigidStatic(transform);
 	cube->createShape(geometry, *mMaterial);
 	gScene->addActor(*cube);
+
+
+	transform = physx::PxTransform(physx::PxVec3(0.0f, -(glm::abs(island->minVector.y) + glm::abs(island->maxVector.y)) + 10, 0.00f), physx::PxQuat::createIdentity());
+	dimensions = physx::PxVec3(10, 2, 10);
+	geometry = physx::PxBoxGeometry(dimensions);
+	cube2 = gPhysicsSDK->createRigidStatic(transform);
+	cube2->createShape(geometry, *mMaterial);
+	gScene->addActor(*cube2);
+	
 	/*physx::PxRigidDynamic *actor = PxCreateDynamic(*gPhysicsSDK, transform, geometry, *mMaterial, density);
 	actor->setAngularDamping(0.00);
 	actor->setLinearVelocity(physx::PxVec3(0, 0, 0));
@@ -340,7 +358,7 @@ int main(int argc, char** argv){
 	pos.z = characterController->getPosition().z;
 	eye = pos - camDirection * 10.0f;
 	view = cam->update(eye, pos);
-
+	frustum.setCamDef(eye, pos, cam->up);
 
 
 	player->position.x = characterController->getFootPosition().x;	
@@ -402,7 +420,6 @@ int main(int argc, char** argv){
 		time = time_new;
 
 		update(time_delta);
-		std::cout << disp.y << std::endl;
 		/*std::cout << "frametime:" << time_delta * 1000 << "ms"
 			<< " =~" << 1.0 / time_delta << "fps" << std::endl;*/
 
@@ -439,6 +456,8 @@ int main(int argc, char** argv){
 		//glUniform1i(glGetUniformLocation(shader->programHandle, "depthMap"), depthMap);
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, depthMap);
+		
+		
 		draw();
 		
 	
@@ -550,11 +569,15 @@ void init(GLFWwindow* window)
 	plattform2 = std::make_unique<Model>("../Models/plattform.dae");
 	path = std::make_unique<Model>("../Models/path.dae");
 	sphere = std::make_unique<Model>("../Models/sphere.dae");
+	island = std::make_unique<Model>("../Models/island.dae");
+	island2 = std::make_unique<Model>("../Models/island.dae");
+
+	//Borders
 
 	player->position = glm::vec3(0, 0.5f, 0);
 	view = cam->setUp(player->center);
-
 	projection = glm::perspective(glm::radians(60.0f), width / height, near_plane, far_plane);
+	frustum.setCamInternals(60.0f, width / height, near_plane, far_plane);
 	player->viewMatrix = view;
 	path->viewMatrix = view;
 	path->position = glm::vec3(0, -1.0f, 5.0f);
@@ -607,7 +630,17 @@ void init(GLFWwindow* window)
 	glm::vec3 spherePos(-5.0f, 5.0f, -10.0f);
 	sphere->position = spherePos;
 	sphere->viewMatrix = view;
-	sphere->update();
+
+	glm::vec3 islandPos(0.0f, 0.1f, 0.0f);
+	island->scale = glm::vec3(10, 10, 10);
+	island->position = islandPos;
+	island->viewMatrix = view;
+	
+	glm::vec3 islandPos2(0.0f, 10.f, 0.00f);
+	island2->position = islandPos2;
+	island2->viewMatrix = view;
+
+
 	
 	//Basic Shader
 	shader->useShader();
@@ -680,10 +713,21 @@ void draw(){
 	player->draw(shader.get());
 	
 	sphere->viewMatrix = view;
-	sphere->draw(toonShader.get());
+	sphere->draw(shader.get());
 
-	path->viewMatrix = view;
-	path->draw(shader.get());
+	island->viewMatrix = view;
+	island->draw(shader.get());
+
+	physx::PxBounds3 bounds = cube2->getWorldBounds();
+	if (frustum.boxInFrustum(bounds) != Frustum::OUTSIDE){
+		island2->viewMatrix = view;
+		island2->draw(shader.get());
+	}
+	
+	
+
+	//path->viewMatrix = view;
+	//path->draw(shader.get());
 	
 	plattform->viewMatrix = view;
 	plattform->draw(shader.get());
@@ -712,12 +756,10 @@ void update(float time_delta)
 			if ((collisionFlags & physx::PxControllerCollisionFlag::eCOLLISION_DOWN && isJumping)){
 				disp.y = 0;
 				isJumping = false;
-				std::cout << "true" << std::endl;
 			}
 			else
 			{
 				disp.y -= 0.1f;
-				std::cout << "false" << std::endl;
 			}
 		
 
@@ -737,8 +779,8 @@ void update(float time_delta)
 		cam->eyeY = camPos.y;
 		cam->eyeZ = camPos.z;
 
-
 		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
+		//frustum.setCamDef(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center, cam->up);
 
 		disp.x = 0; disp.z = 0;
 		timeSim -= myTimeStep;
@@ -791,6 +833,7 @@ void mouseMovementPoll(GLFWwindow* window, double xpos, double ypos)
 	cam->eyeY = eye.y;
 	cam->eyeZ = eye.z;
 	view = cam->useUp(eye.xyz(), player->center, camUp.xyz());
+	
 	GLint model_view = glGetUniformLocation(shader->programHandle, "view");
 	glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
 }
@@ -847,6 +890,7 @@ void keyboardInput(GLFWwindow* window){
 		cam->eyeZ = camPos.z;
 
 		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
+		//frustum.setCamDef(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center, cam->up);
 
 	}
 	else if (glfwGetKey(window, GLFW_KEY_S))
@@ -874,6 +918,7 @@ void keyboardInput(GLFWwindow* window){
 		cam->eyeZ = camPos.z;
 
 		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
+		//frustum.setCamDef(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center, cam->up);
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_A)){
@@ -903,7 +948,7 @@ void keyboardInput(GLFWwindow* window){
 		cam->eyeZ = camPos.z;
 
 		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
-
+		//frustum.setCamDef(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center, cam->up);
 
 		/*player->position.x -= 10 * time_delta;
 
@@ -947,7 +992,7 @@ void keyboardInput(GLFWwindow* window){
 		cam->eyeZ = camPos.z;
 
 		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center);
-
+		//frustum.setCamDef(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), player->center, cam->up);
 
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT))
@@ -967,9 +1012,10 @@ void renderShadowMap(){
 
 
 	sphere->draw(shadowMapShader.get());
+	island->draw(shadowMapShader.get());
 
-	path->viewMatrix = view;
-	path->draw(shadowMapShader.get());
+	//path->viewMatrix = view;
+	//path->draw(shadowMapShader.get());
 
 	plattform->draw(shadowMapShader.get());
 
