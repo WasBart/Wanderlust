@@ -29,7 +29,7 @@ struct Vertex {
 		std::vector<GLuint> textures;
 	
 		Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, std::vector<GLuint> textures);
-		void draw(cgue::Shader* shader);
+		void draw();
 		void update(glm::mat4 operation);
 		glm::mat4 modelMatrix;
 		glm::mat4 viewMatrix;

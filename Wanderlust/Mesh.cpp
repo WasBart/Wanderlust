@@ -21,7 +21,7 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, std::vecto
 	this->setupMesh();
 };
 
-void Mesh::draw(cgue::Shader* shader){
+void Mesh::draw(){
 	// Binding textures
 
 	if (textures.size() > 0){
