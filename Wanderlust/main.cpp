@@ -37,7 +37,8 @@
 #include "Mesh.h"
 #include "Camera.h"
 #include "Frustum.h"
-
+#include "ParticleSystem.h"
+#include "Contour.h"
 
 
 using namespace cgue;
@@ -99,6 +100,8 @@ std::unique_ptr<Model> island2;
 
 std::vector<physx::PxRigidStatic*> boundaries;
 physx::PxRigidStatic* cube2;
+std::unique_ptr<ParticleSystem> parSys;
+std::unique_ptr<Contour> contour;
 
 glm::mat4 persp;
 glm::mat4 view;
@@ -109,11 +112,14 @@ glm::mat4 lightProjection;
 
 const glm::vec3 camInitial = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 camDirection = camInitial;
+const glm::vec4 clearColor = glm::vec4(0.35f, 0.36f, 0.43f, 1.0f);
 float width;
 float height;
 float rad = 0.0f;
 float time_delta;
 float timeSim = 0.0f;
+GLuint singleColorLoc;
+
 GLfloat near_plane = 0.1f, far_plane = 100.0f;
 physx::PxReal myTimeStep = 1.0f / 60.0f;
 physx::PxVec3 disp;
@@ -355,7 +361,7 @@ int main(int argc, char** argv){
 
 	
 
-	glClearColor(0.35f, 0.36f, 0.43f, 0.3f);
+	glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
 	glViewport(0, 0, width, height);
 	
 	glEnable(GL_DEPTH_TEST);
@@ -539,7 +545,7 @@ void init(GLFWwindow* window)
 	shader = std::make_unique<Shader>("../Shader/basic.vert",
 		"../Shader/toon2.frag");
 	toonShader = std::make_unique<Shader>("../Shader/basic.vert",
-		"../Shader/basic.frag");
+		"../Shader/toon2.frag");
 	shadowMapShader = std::make_unique<Shader>("../Shader/shadowMapShader.vert",
 		"../Shader/shadowMapShader.fragment");
 	debugDepthQuad = std::make_unique<Shader>("../Shader/debugDepthQuad.vert", "../Shader/debugDepthQuad.frag");
@@ -574,7 +580,11 @@ void init(GLFWwindow* window)
 	plattform2->position = glm::vec3(-5.0f, 3.0f, 0);
 	plattform2->viewMatrix = view;
 
+	parSys = std::make_unique<ParticleSystem>();
+	parSys->initialize(player->center);
 
+	contour = std::make_unique<Contour>();
+	contour->initialize(width, height);
 	
 
 	//ToonShader
@@ -634,6 +644,7 @@ void init(GLFWwindow* window)
 
     int modelProjection = glGetUniformLocation(shader->programHandle, "projection");
 	glUniformMatrix4fv(modelProjection, 1, GL_FALSE, glm::value_ptr(projection));
+	singleColorLoc = glGetUniformLocation(shader->programHandle, "singleColor");
 		
 	//Setting MaterialProperties
 
@@ -688,13 +699,17 @@ void cleanup()
 	
 }
 void draw(){
-
-
+	/*
 	shader->useShader();
 	
 
 	player->viewMatrix = view;
+
+	contour->activate();
 	player->draw(shader.get());
+	contour->deactivate();
+
+	shader->useShader();
 	
 	sphere->viewMatrix = view;
 	sphere->draw(shader.get());
@@ -726,8 +741,44 @@ void draw(){
 	plattform2->viewMatrix = view;
 	plattform2->draw(shader.get());
 
-		
+	glm::mat4x4 mvp = projection * view;
+	parSys->draw(glm::vec3(0.0, 0.0, 0.0), mvp);
+	*/
 
+	player->viewMatrix = view;
+	path->viewMatrix = view;
+	platform->viewMatrix = view;
+	plattform2->viewMatrix = view;
+	glm::mat4x4 mvp = projection * view;
+	parSys->compute();
+
+	// Draw all other objects with one color
+	glm::vec4 color(clearColor);
+	contour->activate();
+	shader->useShader();
+	glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
+	path->draw(shader.get());
+	platform->draw(shader.get());
+	plattform2->draw(shader.get());
+	color = glm::vec4(1.0, 0.0, 0.0, 1.0);
+	glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
+	player->draw(shader.get());
+	contour->deactivate();
+
+	// Draw all other objects with textures
+	color = glm::vec4(0.0);
+	glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
+	shader->useShader();
+	player->draw(shader.get());
+	path->draw(shader.get());
+	platform->draw(shader.get());
+	plattform2->draw(shader.get());
+
+	// Draw particle system
+	parSys->draw(mvp);
+
+	contour->draw();
+	shader->useShader();
 }
 
 void update(float time_delta)
@@ -1002,7 +1053,6 @@ void keyboardInput(GLFWwindow* window){
 }
 
 void renderShadowMap(){
-	
 	player->viewMatrix = view;
 	player->draw(shadowMapShader.get());
 

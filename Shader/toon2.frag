@@ -12,6 +12,8 @@ layout (location = 0) out vec4 fragColor;
 layout (binding = 0) uniform sampler2D tex;
 layout (binding = 2) uniform sampler2DShadow shadowMap;
 
+uniform vec4 singleColor;
+
 struct Material{
  vec3 ambient;
  vec3 diffuse; 
@@ -80,5 +82,5 @@ void main()
 	result = result * mat.diffuse;
 	}
 
-	fragColor = vec4(result,1.0);
+	fragColor = mix(vec4(result,1.0),singleColor,singleColor.w);
 }

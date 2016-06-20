@@ -42,6 +42,12 @@
     <ClCompile Include="Frustum.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ParticleSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Contour.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="shader.h">
@@ -60,6 +66,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Plane.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ParticleSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Contour.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -89,6 +101,21 @@
       <Filter>Shader</Filter>
     </None>
     <None Include="..\Shader\debugDepthQuad.vert">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="..\Shader\particle.comp">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="..\Shader\particle.vert">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="..\Shader\particle.frag">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="..\Shader\contour.vert">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="..\Shader\contour.frag">
       <Filter>Shader</Filter>
     </None>
   </ItemGroup>

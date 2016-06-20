@@ -88,26 +88,35 @@
   <ItemGroup>
     <ClCompile Include="..\Shader\test.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Contour.cpp" />
     <ClCompile Include="Frustum.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Model.cpp" />
+    <ClCompile Include="ParticleSystem.cpp" />
     <ClCompile Include="Plane.cpp" />
     <ClCompile Include="shader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Contour.h" />
     <ClInclude Include="Frustum.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Model.h" />
+    <ClInclude Include="ParticleSystem.h" />
     <ClInclude Include="Plane.h" />
     <ClInclude Include="shader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Shader\basic.frag" />
     <None Include="..\Shader\basic.vert" />
+    <None Include="..\Shader\contour.frag" />
+    <None Include="..\Shader\contour.vert" />
     <None Include="..\Shader\debugDepthQuad.frag" />
     <None Include="..\Shader\debugDepthQuad.vert" />
+    <None Include="..\Shader\particle.comp" />
+    <None Include="..\Shader\particle.frag" />
+    <None Include="..\Shader\particle.vert" />
     <None Include="..\Shader\shadowMapShader.fragment" />
     <None Include="..\Shader\shadowMapShader.vert" />
     <None Include="..\Shader\sun.frag" />
