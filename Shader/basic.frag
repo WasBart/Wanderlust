@@ -30,6 +30,8 @@ struct Light
 uniform Material mat;
 uniform Light light; 
 
+uniform vec4 singleColor;
+
 
 float ShadowCalculation(vec4 fragPosLightSpace)
 {
@@ -84,5 +86,5 @@ void main()
 	
 	float shadow = ShadowCalculation(fragPosLightSpace);
 	vec3 result = ((ambient + (1.0 - shadow) * (diffuse+specular))* textureColor);
-	fragColor = vec4(result,1.0);
+	fragColor = mix(vec4(result,1.0),singleColor,singleColor.w);
 }

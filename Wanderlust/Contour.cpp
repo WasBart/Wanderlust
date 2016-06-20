@@ -68,12 +68,17 @@ void Contour::activate()
 	//GLenum draw_buffers[1] = { GL_COLOR_ATTACHMENT0 };
 	//glDrawBuffers(1, draw_buffers);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//glViewport(0, 0, windowWidth, windowHeight);
 
 }
 
 void Contour::deactivate()
 {
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Contour::draw()
+{
+	/*
 	glBindFramebuffer(GL_FRAMEBUFFER,0);
 	//glViewport(0,0,windowWidth, windowHeight);
 
@@ -84,4 +89,16 @@ void Contour::deactivate()
 	glBindVertexArray(laplace_vao);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	glBindVertexArray(0);
+	*/
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, big_tex);
+	laplaceShader->useShader();
+	glUniform2fv(3, 25, offset);
+	glBindVertexArray(laplace_vao);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glBindVertexArray(0);
+	glDisable(GL_BLEND);
 }

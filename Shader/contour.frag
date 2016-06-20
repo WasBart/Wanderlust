@@ -22,4 +22,11 @@ void main()
 		if (i != 12)
 			color -= tex_data[i];
 	}
+
+	if (length(color) > 0.9)
+	{
+        color = vec4(0.0, 0.0, 0.0, 1.0);
+    } else {
+        color = vec4(0.0);
+    }
 }

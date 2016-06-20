@@ -98,10 +98,13 @@ glm::mat4 lightProjection;
 
 const glm::vec3 camInitial = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 camDirection = camInitial;
+const glm::vec4 clearColor = glm::vec4(0.35f, 0.36f, 0.43f, 1.0f);
 float width;
 float height;
 float rad = 0.0f;
 float time_delta;
+
+GLuint singleColorLoc;
 
 GLfloat near_plane = 0.1f, far_plane = 100.0f;
 physx::PxReal myTimeStep = 1.0f / 60.0f;
@@ -350,7 +353,7 @@ int main(int argc, char** argv){
 
 	
 
-	glClearColor(0.35f, 0.36f, 0.43f, 0.3f);
+	glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
 	glViewport(0, 0, width, height);
 	
 	glEnable(GL_DEPTH_TEST);
@@ -627,6 +630,7 @@ void init(GLFWwindow* window)
 
     int modelProjection = glGetUniformLocation(shader->programHandle, "projection");
 	glUniformMatrix4fv(modelProjection, 1, GL_FALSE, glm::value_ptr(projection));
+	singleColorLoc = glGetUniformLocation(shader->programHandle, "singleColor");
 		
 	//Setting MaterialProperties
 
@@ -681,6 +685,7 @@ void cleanup()
 	
 }
 void draw(){
+	/*
 	shader->useShader();
 	
 
@@ -692,8 +697,8 @@ void draw(){
 
 	shader->useShader();
 	
-	/*sphere->viewMatrix = view;
-	sphere->draw(toonShader.get());*/
+	//sphere->viewMatrix = view;
+	//sphere->draw(toonShader.get());
 
 	path->viewMatrix = view;
 	path->draw(shader.get());
@@ -705,9 +710,42 @@ void draw(){
 
 	glm::mat4x4 mvp = projection * view;
 	parSys->draw(glm::vec3(0.0, 0.0, 0.0), mvp);
+	*/
 
-		
+	player->viewMatrix = view;
+	path->viewMatrix = view;
+	plattform->viewMatrix = view;
+	plattform2->viewMatrix = view;
+	glm::mat4x4 mvp = projection * view;
+	parSys->compute();
 
+	// Draw all other objects with one color
+	glm::vec4 color(clearColor);
+	contour->activate();
+	shader->useShader();
+	glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
+	path->draw(shader.get());
+	plattform->draw(shader.get());
+	plattform2->draw(shader.get());
+	color = glm::vec4(1.0, 0.0, 0.0, 1.0);
+	glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
+	player->draw(shader.get());
+	contour->deactivate();
+
+	// Draw all other objects with textures
+	color = glm::vec4(0.0);
+	glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
+	shader->useShader();
+	player->draw(shader.get());
+	path->draw(shader.get());
+	plattform->draw(shader.get());
+	plattform2->draw(shader.get());
+
+	// Draw particle system
+	parSys->draw(mvp);
+
+	contour->draw();
+	shader->useShader();
 }
 
 void update(float time_delta)
@@ -959,7 +997,6 @@ void keyboardInput(GLFWwindow* window){
 }
 
 void renderShadowMap(){
-	
 	player->viewMatrix = view;
 	player->draw(shadowMapShader.get());
 

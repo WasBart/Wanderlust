@@ -19,6 +19,14 @@ struct Pstruct
 
 void ParticleSystem::initialize(glm::vec3 &playerPos)
 {
+	srand(time(0));
+	for (int i = 0; i < 5; i++)
+	{
+		wgPos[i].x = 3.0 + i / 10.0;
+		wgPos[i].y = 1.5;
+		wgPos[i].z = 0.0 + i / 10.0;
+	}
+
 	parSSBO;
 	glGenBuffers(1,&parSSBO);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER,parSSBO);
@@ -29,7 +37,7 @@ void ParticleSystem::initialize(glm::vec3 &playerPos)
 	//std::cout << playerPos.x << " " << playerPos.y << " " << playerPos.z << "\n";
 
 	struct Pstruct *par = (struct Pstruct *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,0,NUM_PARTICLES * sizeof(struct Pstruct),bufMask);
-	srand(time(0));
+	
 	for (int i = 0; i < NUM_PARTICLES; i++)
 	{
 		/*par[i].x = playerPos.x;
@@ -42,9 +50,9 @@ void ParticleSystem::initialize(glm::vec3 &playerPos)
 
 		par[i].lx = 1000.0;*/
 
-		par[i].x = 1;
-		par[i].y = 1;
-		par[i].z = 1;
+		par[i].x = wgPos[(int)(i / (float)WORK_GROUP_SIZE)].x;
+		par[i].y = wgPos[(int)(i / (float)WORK_GROUP_SIZE)].y;
+		par[i].z = wgPos[(int)(i / (float)WORK_GROUP_SIZE)].z;
 
 		par[i].vx = (rand() / (float)RAND_MAX * 1.0) * (rand() % 2 == 0 ? -1.0 : 1.0);
 		par[i].vy = (rand() / (float)RAND_MAX * 1.0) * (rand() % 2 == 0 ? -1.0 : 1.0);
@@ -149,14 +157,18 @@ void ParticleSystem::initialize(glm::vec3 &playerPos)
 	}
 }
 
-void ParticleSystem::draw(glm::vec3 &playerPos, glm::mat4x4 &mvp)
+void ParticleSystem::compute()
 {
 	glUseProgram(programHandle);
 	timer = (glfwGetTime() - oldTime) * 0.0001;
 	glUniform1f(4, timer);
+	glUniform3fv(5, 5, (float*) wgPos);
 	glDispatchCompute(NUM_PARTICLES / WORK_GROUP_SIZE, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+}
 
+void ParticleSystem::draw(glm::mat4x4 &mvp)
+{
 	renderShader->useShader();
 	glUniformMatrix4fv(3, 1, GL_FALSE, glm::value_ptr(mvp));
 	glBindVertexArray(parVAO);

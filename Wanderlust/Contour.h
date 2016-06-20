@@ -18,4 +18,5 @@ public:
 	void initialize(GLuint width, GLuint height);
 	void activate();
 	void deactivate();
+	void draw();
 };

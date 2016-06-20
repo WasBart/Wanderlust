@@ -12,11 +12,13 @@ public:
 	GLuint parSSBO;
 	GLuint programHandle;
 	GLuint parVAO;
+	glm::vec3 wgPos[5];
 	std::unique_ptr<cgue::Shader> renderShader;
 	float timer;
 	float oldTime;
 
 	void initialize(glm::vec3 &playerPos);
-	void draw(glm::vec3 &playerPos, glm::mat4x4 &mvp);
+	void compute();
+	void draw(glm::mat4x4 &mvp);
 	void clean();
 };
