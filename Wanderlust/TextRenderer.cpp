@@ -4,7 +4,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "TextRenderer.h"
 
-TextRenderer::TextRenderer()
+TextRenderer::TextRenderer(float width, float height)
 {
 	// Enable freetype
 	FT_Library ft;
@@ -64,7 +64,7 @@ TextRenderer::TextRenderer()
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
 
-	projection = glm::ortho(0.0f, 800.0f, 0.0f, 600.0f);
+	projection = glm::ortho(0.0f, width, 0.0f, height);
 }
 
 void TextRenderer::drawText(std::string text, float relX, float relY, float scale)

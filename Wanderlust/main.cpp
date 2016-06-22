@@ -21,7 +21,9 @@
 #else
 #pragma comment(lib, "PhysX3_x86.lib")
 #pragma comment(lib, "PhysX3Common_x86.lib")
-#pragma comment(lib, "PhysX3Extensions_x86.lib")
+#pragma comment(lib, "PhysX3Extensions.lib")
+#pragma comment(lib, "PhysX3CharacterKinematic_x86.lib")
+#pragma comment(lib, "PhysX3Gpu_x86.lib")
 #endif
 
 #define GLM_SWIZZLE
@@ -141,7 +143,7 @@ GLuint depthMap;
 glm::vec4 camUp = glm::vec4(0.0f,1.0f,0.0f,1.0f);
 
 // Light source
-glm::vec3 lightPos(-2.0f, 8.0f, 2.0f);
+glm::vec3 lightPos(-2.0f, 4.0f, 2.0f);
 
 
 int main(int argc, char** argv){
@@ -475,6 +477,7 @@ void initPhysX(){
 		std::cerr << "Error creating PhysX3 device, Exiting" << std::endl;
 	}
 
+#ifdef _DEBUG
 	physx::PxVisualDebuggerConnectionManager* pvd = gPhysicsSDK->getPvdConnectionManager();
 	if (!pvd)
 		return;
@@ -483,7 +486,7 @@ void initPhysX(){
 	physx::PxVisualDebuggerExt::createConnection(pvd, "localhost", 5425, 10000, theConnectionFlags);
 
 	gPhysicsSDK->getVisualDebugger()->setVisualizeConstraints(true);
-
+#endif
 	//Creating material
 	//static friction, dynamic friction, restitution
 	physx::PxMaterial* mMaterial = gPhysicsSDK->createMaterial(0.5, 0.5, 0.0);
@@ -518,9 +521,7 @@ void initPhysX(){
 	characterControllerDesc.upDirection = physx::PxVec3(0, 1, 0);
 	characterControllerDesc.material = mMaterial;
 
-	//CameraControllerDescription
-
-
+	
 	characterController = manager->createController(characterControllerDesc);
 	if (characterController == nullptr){
 		std::cout << "error" << std::endl;
@@ -647,7 +648,7 @@ void init(GLFWwindow* window)
 	
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-	text = std::make_unique<TextRenderer>();
+	text = std::make_unique<TextRenderer>(width, height);
 	models.push_back(std::move(player));
 	models.push_back(std::move(island));
 	models.push_back(std::move(platform));
@@ -680,18 +681,30 @@ void cleanup()
 void print_fps()
 {
 	if (frametimeOn) {
+		if (wireframeOn) {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
 		float frametime = time_delta * 1000;
 		float fps = 1.0 / time_delta;
 		std::string frames = "Frametime: " + std::to_string(frametime) + " ms =~ " + std::to_string(fps) + " fps";
 		text->drawText(frames, 10, height - 25.0f, 0.4f);
+		if (wireframeOn) {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		}
 	}
 }
 
 void print_message()
 {
 	if (messageTimer > 0) {
+		if (wireframeOn) {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
 		text->drawText(textMessage, 10, height - 50.0f, 0.4f);
 		messageTimer -= time_delta;
+		if (wireframeOn) {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		}
 	}
 }
 
@@ -758,12 +771,38 @@ void draw(){
 	glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
 	for (int i = 1; i < models.size(); i++){
 		if (frustumOn){
+			if (i == 3 && transparencyOn){
+				glEnable(GL_BLEND);
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			}
+			if (i == 3) {
+				glDisable(GL_CULL_FACE);
+			}
 			if (frustum.boxInFrustum(boundaries[i]->getWorldBounds())){
 				models[i]->draw();
 			}
+			if (i == 3 && transparencyOn){
+				glDisable(GL_BLEND);
+			}
+			if (i == 3) {
+				glEnable(GL_CULL_FACE);
+			}
 		}
 		else{
+			if (i == 3 && transparencyOn){
+				glEnable(GL_BLEND);
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			}
+			if (i == 3) {
+				glDisable(GL_CULL_FACE);
+			}
 			models[i]->draw();
+			if (i == 3 && transparencyOn){
+				glDisable(GL_BLEND);
+			}
+			if (i == 3) {
+				glEnable(GL_CULL_FACE);
+			}
 		}
 	
 	}
@@ -783,14 +822,33 @@ void draw(){
 					glEnable(GL_BLEND);
 					glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 				}
+				if (i == 3) {
+					glDisable(GL_CULL_FACE);
+				}
 				models[i]->draw();
 				if (i == 3 && transparencyOn){
 					glDisable(GL_BLEND);
 				}
+				if (i == 3) {
+					glEnable(GL_CULL_FACE);
+				}
 			}
 		}
 		else{
-			models[0]->draw();
+			if (i == 3 && transparencyOn){
+				glEnable(GL_BLEND);
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			}
+			if (i == 3) {
+				glDisable(GL_CULL_FACE);
+			}
+			models[i]->draw();
+			if (i == 3 && transparencyOn){
+				glDisable(GL_BLEND);
+			}
+			if (i == 3) {
+				glEnable(GL_CULL_FACE);
+			}
 		}
 
 	}
@@ -1174,6 +1232,10 @@ void keyboardInput(GLFWwindow* window){
 }
 
 void renderShadowMap(){
+	if (transparencyOn)
+		glUniform1f(8, 1.0f);
+	else
+		glUniform1f(8, 0.0f);
 	for (int i = 0; i < models.size(); i++){
 		models[i]->draw();
 	}
@@ -1184,30 +1246,29 @@ static void APIENTRY DebugCallback(GLenum source, GLenum type, GLuint id, GLenum
 	switch (id) {
 	case 131185: {
 		// Warning: Video Memory as Source
-	
+
 
 		return;
 	}
-	default: {
-		break;
-	}
-	}
-
-	switch (id) {
 	case 131218: {
 		// Program/shader state performance warning:
 		// Fragment Shader is going to be recompiled because the shader key based on GL state mismatches.
 
 		return;
 	}
+	case 131222: {
+		//First draw error
+
+		return;
+	}
 	default: {
 		break;
 	}
+
+			 std::string error = FormatDebugOutput(source, type, id, severity, message);
+			 std::cout << error << std::endl;
 	}
-	
-	std::string error = FormatDebugOutput(source, type, id, severity, message);
-	std::cout << error << std::endl;
-}
+	}
 
 
 static std::string FormatDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity, const char* msg) {

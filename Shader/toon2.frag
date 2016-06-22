@@ -82,5 +82,5 @@ void main()
 	result = result * mat.diffuse;
 	}
 
-	fragColor = mix(vec4(result, texture(tex,fragmentUV).w) ,singleColor ,singleColor.w);
+	fragColor = mix(vec4(result, texture(tex,fragmentUV).w) , singleColor ,singleColor.w);
 }

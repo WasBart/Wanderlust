@@ -24,6 +24,6 @@ private:
 	std::unordered_map<char, Character> charmap;
 	glm::mat4 projection;
 public:
-	TextRenderer();
+	TextRenderer(float width, float height);
 	void drawText(std::string text, float relX, float relY, float scale);
 };
