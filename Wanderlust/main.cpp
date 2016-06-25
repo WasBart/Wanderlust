@@ -103,9 +103,6 @@ std::unique_ptr<Model> platform2_2;
 std::unique_ptr<Model> platform0_1;
 std::unique_ptr<Model> platform1_1;
 std::unique_ptr<Model> platform2_1;
-std::unique_ptr<Model> platform0_0;
-std::unique_ptr<Model> platform1_0;
-std::unique_ptr<Model> platform2_0;
 std::unique_ptr<Model> island;
 std::unique_ptr<Model> plant;
 std::unique_ptr<Model> platform2;
@@ -554,9 +551,6 @@ void init(GLFWwindow* window)
 	platform0_1 = std::make_unique<Model>("../Models/platform.dae", &textures);
 	platform1_1 = std::make_unique<Model>("../Models/platform.dae", &textures);
 	platform2_1 = std::make_unique<Model>("../Models/platform.dae", &textures);
-	platform0_0 = std::make_unique<Model>("../Models/platform.dae", &textures);
-	platform0_1 = std::make_unique<Model>("../Models/platform.dae", &textures);
-	platform0_2 = std::make_unique<Model>("../Models/platform.dae", &textures);
 	island = std::make_unique<Model>("../Models/islandSmoothed.dae", &textures);
 	plant = std::make_unique<Model>("../Models/plant.dae", &textures);
 	platform2 = std::make_unique<Model>("../Models/platform.dae", &textures);
@@ -629,7 +623,7 @@ void init(GLFWwindow* window)
 	platform0_4->position = glm::vec3(10.0f, 0.0f, -5.0f);
 	platform0_4->viewMatrix = view;
 
-	platform2_4->position = glm::vec3(10.0f, 4.0f, 0.0f);
+	platform2_4->position = glm::vec3(10.0f, 0.0f, 5.0f);
 	platform2_4->viewMatrix = view;
 
 	platform1_3->position = glm::vec3(15.0f, 0.0f, 0.0f);
@@ -640,7 +634,25 @@ void init(GLFWwindow* window)
 
 	platform2_3->position = glm::vec3(15.0f, 0.0f, 5.0f);
 	platform2_3->viewMatrix = view;
-	
+
+	platform1_2->position = glm::vec3(20.0f, 0.0f, 0.0f);
+	platform1_2->viewMatrix = view;
+
+	platform0_2->position = glm::vec3(20.0f, 0.0f, -5.0f);
+	platform0_2->viewMatrix = view;
+
+	platform2_2->position = glm::vec3(20.0f, 0.0f, 5.0f);
+	platform2_2->viewMatrix = view;
+
+	platform1_1->position = glm::vec3(25.0f, 0.0f, 0.0f);
+	platform1_1->viewMatrix = view;
+
+	platform0_1->position = glm::vec3(25.0f, 0.0f, -5.0f);
+	platform0_1->viewMatrix = view;
+
+	platform2_1->position = glm::vec3(25.0f, 0.0f, 5.0f);
+	platform2_1->viewMatrix = view;
+
 	plant->position = glm::vec3(-3.0f, 2*(glm::abs(plant->maxVector.y) + glm::abs(plant->minVector.y)) , 0.0);
 	plant->viewMatrix = view;
 
@@ -687,14 +699,20 @@ void init(GLFWwindow* window)
 	models.push_back(std::move(player));
 	models.push_back(std::move(island));
 	models.push_back(std::move(platform1_4));
+	models.push_back(std::move(plant));
+	models.push_back(std::move(platform2));
+	models.push_back(std::move(platform3));
 	models.push_back(std::move(platform0_4));
 	models.push_back(std::move(platform2_4));
 	models.push_back(std::move(platform1_3));
 	models.push_back(std::move(platform0_3));
 	models.push_back(std::move(platform2_3));
-	models.push_back(std::move(plant));
-	models.push_back(std::move(platform2));
-	models.push_back(std::move(platform3));
+	models.push_back(std::move(platform1_2));
+	models.push_back(std::move(platform0_2));
+	models.push_back(std::move(platform2_2));
+	models.push_back(std::move(platform1_1));
+	models.push_back(std::move(platform0_1));
+	models.push_back(std::move(platform2_1));
 }
 
 
