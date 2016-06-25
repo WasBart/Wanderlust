@@ -38,7 +38,8 @@ void Mesh::draw(){
 	glBindVertexArray(0);
 
 	//Unbinding
-	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindTexture(GL_TEXTURE0, 0);
+	glBindTexture(GL_TEXTURE0, 2);
 }
 
 void Mesh::update(glm::mat4 operation){

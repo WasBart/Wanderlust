@@ -93,6 +93,8 @@ std::unique_ptr<Model> player;
 std::unique_ptr<Model> platform;
 std::unique_ptr<Model> island;
 std::unique_ptr<Model> plant;
+std::unique_ptr<Model> platform2;
+std::unique_ptr<Model> platform3;
 
 std::unique_ptr<TextRenderer> text;
 
@@ -100,8 +102,7 @@ std::vector<GLuint> textures;
 
 //Border Array
 
-std::vector<physx::PxRigidStatic*> boundaries;
-physx::PxRigidStatic* cube2;
+std::vector<physx::PxRigidActor*> boundaries;
 std::unique_ptr<ParticleSystem> parSys;
 std::unique_ptr<Contour> contour;
 
@@ -147,7 +148,6 @@ glm::vec3 lightPos(-2.0f, 4.0f, 2.0f);
 
 
 int main(int argc, char** argv){
-
 	width = 800;
 	height = 600;
 	bool fullScreen = false;
@@ -317,7 +317,7 @@ int main(int argc, char** argv){
 
 	
 	GLuint depthMapFBO;
-	const GLuint SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+	const GLuint SHADOW_WIDTH = 2048, SHADOW_HEIGHT = 2048;
 	glGenFramebuffers(1, &depthMapFBO);
 
 	glGenTextures(1, &depthMap);
@@ -368,7 +368,7 @@ int main(int argc, char** argv){
 		glm::mat4 lightSpaceMatrix;
 
 
-		lightProjection = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f,  0.01f,  20.0f);
+		lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f,  0.01f,  100.0f);
 		lightView = glm::lookAt(lightPos + models[0]->position, models[0]->center, glm::vec3(0.0, 1.0, 0.0));
 		lightSpaceMatrix = lightProjection * lightView;
 		
@@ -391,11 +391,8 @@ int main(int argc, char** argv){
 		shader->useShader();
 		
 		glUniformMatrix4fv(glGetUniformLocation(shader->programHandle, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
-		//glUniform1i(glGetUniformLocation(shader->programHandle, "depthMap"), depthMap);
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, depthMap);
-		
-		
 		draw();
 	
 		
@@ -428,34 +425,6 @@ int main(int argc, char** argv){
 	return EXIT_SUCCESS;
 }
 
-GLuint quadVAO = 0;
-GLuint quadVBO;
-void RenderQuad()
-{
-	if (quadVAO == 0)
-	{
-		GLfloat quadVertices[] = {
-			// Positions        // Texture Coords
-			-1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-			1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-			1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-		};
-		// Setup plane VAO
-		glGenVertexArrays(1, &quadVAO);
-		glGenBuffers(1, &quadVBO);
-		glBindVertexArray(quadVAO);
-		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-	}
-	glBindVertexArray(quadVAO);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-	glBindVertexArray(0);
-}
 
 void initPhysX(){
 	
@@ -496,23 +465,37 @@ void initPhysX(){
 	boundaries.push_back(0);
 	for (int i = 1; i < models.size(); i++)
 	{
-		Model *model = models[i].get();
-		physx::PxTransform transform(physx::PxVec3(models[i]->position.x, -(glm::abs(model->minVector.y) + glm::abs(model->maxVector.y))+models[i]->position.y, models[i]->position.z), physx::PxQuat::createIdentity());
-		physx::PxVec3 dimensions((1.0f/2.0f * (glm::abs(model->minVector.x) + glm::abs(model->maxVector.x))), glm::abs(model->minVector.y) + glm::abs(model->maxVector.y), 1.0f/2.0f *((glm::abs(model->minVector.z) + glm::abs(model->maxVector.z))));
-		physx::PxBoxGeometry geometry(dimensions);
-		physx::PxRigidStatic* cube = gPhysicsSDK->createRigidStatic(transform);
-		cube->createShape(geometry, *mMaterial);
-		gScene->addActor(*cube);
-		boundaries.push_back(cube);
+		/*if (i == 4 || i == 5){
+			Model *model = models[i].get();
+			physx::PxTransform transform(physx::PxVec3(models[i]->position.x, -(glm::abs(model->minVector.y) + glm::abs(model->maxVector.y)) + models[i]->position.y, models[i]->position.z), physx::PxQuat::createIdentity());
+			physx::PxVec3 dimensions((1.0f / 2.0f * (glm::abs(model->minVector.x) + glm::abs(model->maxVector.x))), glm::abs(model->minVector.y) + glm::abs(model->maxVector.y), 1.0f / 2.0f *((glm::abs(model->minVector.z) + glm::abs(model->maxVector.z))));
+			physx::PxBoxGeometry geometry(dimensions);
+			physx::PxRigidDynamic* dynamic = gPhysicsSDK->createRigidDynamic(transform);
+			dynamic->createShape(geometry, *mMaterial);
+			dynamic->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, true);
+			gScene->addActor(*dynamic);
+			boundaries.push_back(dynamic);
+		}
+		else{*/
+			Model *model = models[i].get();
+			physx::PxTransform transform(physx::PxVec3(models[i]->position.x, -(glm::abs(model->minVector.y) + glm::abs(model->maxVector.y)) + models[i]->position.y, models[i]->position.z), physx::PxQuat::createIdentity());
+			physx::PxVec3 dimensions((1.0f / 2.0f * (glm::abs(model->minVector.x) + glm::abs(model->maxVector.x))), glm::abs(model->minVector.y) + glm::abs(model->maxVector.y), 1.0f / 2.0f *((glm::abs(model->minVector.z) + glm::abs(model->maxVector.z))));
+			physx::PxBoxGeometry geometry(dimensions);
+			physx::PxRigidStatic* cube = gPhysicsSDK->createRigidStatic(transform);
+			cube->createShape(geometry, *mMaterial);
+			gScene->addActor(*cube);
+			boundaries.push_back(cube);
+		//}
+		
 	}
 
-	int playerWidth = abs(models[0]->maxVector.x - models[0]->minVector.x);
-	int playerBreadth = abs(models[0]->maxVector.z - models[0]->minVector.z);
-	int playerHeight = abs(models[0]->maxVector.y - models[0]->minVector.y);
+	float playerWidth = abs(models[0]->maxVector.x) - abs(models[0]->minVector.x);
+	float playerBreadth = abs(models[0]->maxVector.z) - abs(models[0]->minVector.z);
+	float playerHeight = abs(models[0]->maxVector.y) - abs(models[0]->minVector.y);
 
 	//PlayerControllerDescription
-	characterControllerDesc.height = playerHeight;
-	characterControllerDesc.radius = playerWidth / 2.0f;
+	characterControllerDesc.height = 1;
+	characterControllerDesc.radius = 0.5f;
 	characterControllerDesc.slopeLimit = 0.0f;
 	characterControllerDesc.stepOffset = 0.00f;
 	characterControllerDesc.climbingMode = physx::PxCapsuleClimbingMode::eCONSTRAINED;
@@ -524,7 +507,7 @@ void initPhysX(){
 	
 	characterController = manager->createController(characterControllerDesc);
 	if (characterController == nullptr){
-		std::cout << "error" << std::endl;
+		std::cout << "CharacterController couldn't be created" << std::endl;
 	}
 }
 
@@ -543,10 +526,12 @@ void init(GLFWwindow* window)
 
 	//cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
 	cam = std::make_unique<Camera>(0.0f, 0.0f, 0.0f);
-	player = std::make_unique<Model>("../Models/player.dae", &textures);
+	player = std::make_unique<Model>("../Models/player2.dae", &textures);
 	platform = std::make_unique<Model>("../Models/platform.dae", &textures);
-	island = std::make_unique<Model>("../Models/island.dae", &textures);
+	island = std::make_unique<Model>("../Models/islandSmoothed.dae", &textures);
 	plant = std::make_unique<Model>("../Models/plant.dae", &textures);
+	platform2 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform3 = std::make_unique<Model>("../Models/platform.dae", &textures);
 
 	//Borders
 
@@ -599,9 +584,15 @@ void init(GLFWwindow* window)
 	*/
 	
 
-	glm::vec3 islandPos(0.0f, 0.1f, 0.0f);
+	glm::vec3 islandPos(0.0f, 0.0f, 0.0f);
 	island->position = islandPos;
 	island->viewMatrix = view;
+
+	platform2->position = glm::vec3(-15.0f, 0.0f, 0.0f) ;
+	platform2->viewMatrix = view;
+
+	platform3->position = glm::vec3(-15.0f, 6.0f, 0.0f);
+	platform3->viewMatrix = view;
 	
 	platform->position = glm::vec3(10.0f, 0.0f, 0);
 	platform->viewMatrix = view;
@@ -653,6 +644,8 @@ void init(GLFWwindow* window)
 	models.push_back(std::move(island));
 	models.push_back(std::move(platform));
 	models.push_back(std::move(plant));
+	models.push_back(std::move(platform2));
+	models.push_back(std::move(platform3));
 }
 
 
@@ -770,7 +763,8 @@ void draw(){
 	shader->useShader();
 	glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
 	for (int i = 1; i < models.size(); i++){
-		if (frustumOn){
+	
+		if (frustumOn  && (i != 4 || i !=5) ){
 			if (i == 3 && transparencyOn){
 				glEnable(GL_BLEND);
 				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -816,7 +810,7 @@ void draw(){
 	glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
 	shader->useShader();
 	for (int i = 0; i < models.size(); i++){
-		if (frustumOn && i!=0){
+		if (frustumOn && i != 0 && (i != 4 || i != 5)){
 			if (frustum.boxInFrustum(boundaries[i]->getWorldBounds())){
 				if (i == 3 && transparencyOn){
 					glEnable(GL_BLEND);
@@ -861,6 +855,10 @@ void draw(){
 	print_message();
 
 	// Draw contour
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	if (wireframeOn){
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	}
 	contour->draw();
 	shader->useShader();
 
@@ -913,6 +911,12 @@ void update(float time_delta)
 
 		disp.x = 0; disp.z = 0;
 		timeSim -= myTimeStep;
+
+			rad += (glm::pi<float>() / 180.0f) * 20 * time_delta;
+			models[4]->position = glm::vec3(models[4]->position.x, models[4]->position.y, sin(rad) * 10.0f);
+
+			models[5]->outModel = glm::rotate(models[5]->outModel, glm::radians(45.0f), glm::vec3(0, 1, 0));
+			models[5]->outModel = models[4]->outModel * models[5]->outModel;
 	}
 }
 
@@ -1232,12 +1236,14 @@ void keyboardInput(GLFWwindow* window){
 }
 
 void renderShadowMap(){
-	if (transparencyOn)
-		glUniform1f(8, 1.0f);
-	else
-		glUniform1f(8, 0.0f);
+	
 	for (int i = 0; i < models.size(); i++){
+		if (i == 3){
+			if (transparencyOn)
+				glUniform1f(8, 1.0f);
+		}
 		models[i]->draw();
+		glUniform1f(8, 0.0f);
 	}
 }
 

@@ -31,6 +31,7 @@ void Model::update(){
 	model = glm::translate(model, position);
 	model = glm::rotate(model,angle,glm::vec3(0,1,0));
 	model = glm::scale(model, scale);
+	outModel = model;
 	for (GLuint i = 0; i < this->meshes.size(); i++){
 		this->meshes[i].update(model);
 	}
