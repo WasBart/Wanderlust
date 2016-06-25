@@ -919,10 +919,10 @@ void update(float time_delta)
 		models[4]->position = glm::vec3(models[4]->position.x, models[4]->position.y, sin(rad) * 10.0f);
 
 		glm::mat4 model = models[4]->outModel;
-		model = glm::translate(glm::mat4(), glm::vec3(4, 4, 4));
-		model = glm::rotate(model, glm::radians(30.0f), glm::vec3(0, 1, 0));
-		
-		//models[4]->updateChild(model);
+		glm::mat4 modelT = glm::translate(model, glm::vec3(0,4,0));
+		//model = glm::rotate(model, glm::radians(30.0f), glm::vec3(0, 1, 0));
+		models[4]->updateChild(modelT);
+	
 		
 	}
 }
