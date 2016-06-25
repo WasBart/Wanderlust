@@ -3,12 +3,13 @@
 #include <memory>
 #include "shader.h"
 
-class Contour 
+class Contour
 {
 public:
 
 	GLuint big_tex;
 	GLuint big_fbo;
+	GLuint big_depth_tex;
 	GLuint laplace_vao;
 	GLuint windowWidth;
 	GLuint windowHeight;

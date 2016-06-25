@@ -208,7 +208,7 @@ int main(int argc, char** argv){
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 #endif
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	GLFWwindow* window;
 
@@ -602,6 +602,7 @@ void init(GLFWwindow* window)
 	plant->position = glm::vec3(-3.0f, 2*(glm::abs(plant->maxVector.y) + glm::abs(plant->minVector.y)) , 0.0);
 	plant->viewMatrix = view;
 
+	platform3->draw();
 	
 	//Basic Shader
 	shader->useShader();
@@ -631,7 +632,8 @@ void init(GLFWwindow* window)
 	int lightAmbientPos = glGetUniformLocation(shader->programHandle, "light.ambient");
 	int lightDiffusePos = glGetUniformLocation(shader->programHandle, "light.diffuse");
 	int lightSpecularPos = glGetUniformLocation(shader->programHandle, "light.specular");
-    int lightDirectionPos = glGetUniformLocation(shader->programHandle, "light.direction");
+    
+	int lightDirectionPos = glGetUniformLocation(shader->programHandle, "light.direction");
 
 	glUniform3f(lightDirectionPos, lightPos.x, lightPos.y, lightPos.z);
 	glUniform3f(lightAmbientPos, 1.0f, 1.0f, 1.0f);
@@ -763,45 +765,7 @@ void draw(){
 	glm::vec4 color(clearColor);
 	contour->activate();
 	shader->useShader();
-	glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
-	for (int i = 1; i < models.size(); i++){
 	
-		if (frustumOn  && (i != 4 || i !=5) ){
-			if (i == 3 && transparencyOn){
-				glEnable(GL_BLEND);
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			}
-			if (i == 3) {
-				glDisable(GL_CULL_FACE);
-			}
-			if (frustum.boxInFrustum(boundaries[i]->getWorldBounds())){
-				models[i]->draw();
-			}
-			if (i == 3 && transparencyOn){
-				glDisable(GL_BLEND);
-			}
-			if (i == 3) {
-				glEnable(GL_CULL_FACE);
-			}
-		}
-		else{
-			if (i == 3 && transparencyOn){
-				glEnable(GL_BLEND);
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			}
-			if (i == 3) {
-				glDisable(GL_CULL_FACE);
-			}
-			models[i]->draw();
-			if (i == 3 && transparencyOn){
-				glDisable(GL_BLEND);
-			}
-			if (i == 3) {
-				glEnable(GL_CULL_FACE);
-			}
-		}
-	
-	}
 	color = glm::vec4(1.0, 0.0, 0.0, 1.0);
 	glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
 	models[0]->draw();
@@ -812,7 +776,7 @@ void draw(){
 	glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
 	shader->useShader();
 	for (int i = 0; i < models.size(); i++){
-		if (frustumOn && i != 0 && (i != 4 || i != 5)){
+		if (frustumOn && i != 0 && i != 4 ){
 			if (frustum.boxInFrustum(boundaries[i]->getWorldBounds())){
 				if (i == 3 && transparencyOn){
 					glEnable(GL_BLEND);
@@ -839,6 +803,10 @@ void draw(){
 				glDisable(GL_CULL_FACE);
 			}
 			models[i]->draw();
+			if (i == 4){
+				models[4]->updateChild(models[4]->child->outModel);
+			}
+
 			if (i == 3 && transparencyOn){
 				glDisable(GL_BLEND);
 			}
@@ -920,8 +888,11 @@ void update(float time_delta)
 
 		glm::mat4 model = models[4]->outModel;
 		glm::mat4 modelT = glm::translate(model, glm::vec3(0,4,0));
+		auto mod = models[4]->child;
 		//model = glm::rotate(model, glm::radians(30.0f), glm::vec3(0, 1, 0));
-		models[4]->updateChild(modelT);
+
+		shader->useShader();
+		
 	
 		
 	}

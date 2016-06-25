@@ -16,8 +16,15 @@ void Contour::initialize(GLuint width, GLuint height)
 	glGenFramebuffers(1, &big_fbo);
 	glBindFramebuffer(GL_FRAMEBUFFER, big_fbo);
 	glGenTextures(1, &big_tex);
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, big_tex);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glGenTextures(1, &big_depth_tex);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, big_depth_tex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glGenRenderbuffers(1, &big_depth);
@@ -25,6 +32,7 @@ void Contour::initialize(GLuint width, GLuint height)
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, big_depth);
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, big_tex, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, big_depth_tex, 0);
 	glDrawBuffers(1, draw_buffers);
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -41,7 +49,7 @@ void Contour::initialize(GLuint width, GLuint height)
 			offset[(((i * 5) + j) * 2) + 1] = (-2.0f * yinc) + ((GLfloat)j * yinc);
 		}
 	}
-	
+
 
 	// Create vertex buffer for laplace shader
 	glGenVertexArrays(1, &laplace_vao);
@@ -68,6 +76,8 @@ void Contour::activate()
 	//GLenum draw_buffers[1] = { GL_COLOR_ATTACHMENT0 };
 	//glDrawBuffers(1, draw_buffers);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, big_depth_tex);
 
 }
 
@@ -95,6 +105,8 @@ void Contour::draw()
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, big_tex);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, big_depth_tex);
 	laplaceShader->useShader();
 	glUniform2fv(3, 25, offset);
 	glBindVertexArray(laplace_vao);
