@@ -489,9 +489,9 @@ void initPhysX(){
 		
 	}
 
-	float playerWidth = abs(models[0]->maxVector.x) - abs(models[0]->minVector.x);
-	float playerBreadth = abs(models[0]->maxVector.z) - abs(models[0]->minVector.z);
-	float playerHeight = abs(models[0]->maxVector.y) - abs(models[0]->minVector.y);
+	float playerWidth = abs(models[0]->maxVector.x) + abs(models[0]->minVector.x);
+	float playerBreadth = abs(models[0]->maxVector.z) + abs(models[0]->minVector.z);
+	float playerHeight = abs(models[0]->maxVector.y) +abs(models[0]->minVector.y);
 
 	//PlayerControllerDescription
 	characterControllerDesc.height = 1;
@@ -594,6 +594,8 @@ void init(GLFWwindow* window)
 	platform3->position = glm::vec3(-15.0f, 6.0f, 0.0f);
 	platform3->viewMatrix = view;
 	
+	platform2->child = platform3.get();
+	
 	platform->position = glm::vec3(10.0f, 0.0f, 0);
 	platform->viewMatrix = view;
 
@@ -645,7 +647,7 @@ void init(GLFWwindow* window)
 	models.push_back(std::move(platform));
 	models.push_back(std::move(plant));
 	models.push_back(std::move(platform2));
-	models.push_back(std::move(platform3));
+	//models.push_back(std::move(platform3));
 }
 
 
@@ -912,11 +914,16 @@ void update(float time_delta)
 		disp.x = 0; disp.z = 0;
 		timeSim -= myTimeStep;
 
-			rad += (glm::pi<float>() / 180.0f) * 20 * time_delta;
-			models[4]->position = glm::vec3(models[4]->position.x, models[4]->position.y, sin(rad) * 10.0f);
 
-			models[5]->outModel = glm::rotate(models[5]->outModel, glm::radians(45.0f), glm::vec3(0, 1, 0));
-			models[5]->outModel = models[4]->outModel * models[5]->outModel;
+		rad += (glm::pi<float>() / 180.0f) * 60 * time_delta;
+		models[4]->position = glm::vec3(models[4]->position.x, models[4]->position.y, sin(rad) * 10.0f);
+
+		glm::mat4 model = models[4]->outModel;
+		model = glm::translate(glm::mat4(), glm::vec3(4, 4, 4));
+		model = glm::rotate(model, glm::radians(30.0f), glm::vec3(0, 1, 0));
+		
+		//models[4]->updateChild(model);
+		
 	}
 }
 

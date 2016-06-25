@@ -15,6 +15,7 @@ public:
 	void draw();
 	GLuint Model::loadTexture(std::string filePath);
 	void update();
+	void updateChild(glm::mat4 modelIn);
 	glm::vec3 position = glm::vec3(0,0,0);
 	glm::vec3 scale = glm::vec3(1, 1, 1);
 	GLfloat angle = 0;
@@ -23,6 +24,7 @@ public:
 	glm::vec3 center;
 	glm::vec3 minVector;
 	glm::vec3 maxVector;
+	Model* child; 
 
 private:
 	
