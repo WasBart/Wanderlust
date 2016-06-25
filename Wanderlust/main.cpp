@@ -89,8 +89,23 @@ std::unique_ptr<Shader> debugDepthQuad;
 std::unique_ptr<Camera> cam;
 
 std::vector<std::unique_ptr<Model>> models;
+std::unique_ptr<Model> platforms[3][5];
 std::unique_ptr<Model> player;
-std::unique_ptr<Model> platform;
+std::unique_ptr<Model> platform1_4;
+std::unique_ptr<Model> platform0_4;
+std::unique_ptr<Model> platform2_4;
+std::unique_ptr<Model> platform0_3;
+std::unique_ptr<Model> platform1_3;
+std::unique_ptr<Model> platform2_3;
+std::unique_ptr<Model> platform0_2;
+std::unique_ptr<Model> platform1_2;
+std::unique_ptr<Model> platform2_2;
+std::unique_ptr<Model> platform0_1;
+std::unique_ptr<Model> platform1_1;
+std::unique_ptr<Model> platform2_1;
+std::unique_ptr<Model> platform0_0;
+std::unique_ptr<Model> platform1_0;
+std::unique_ptr<Model> platform2_0;
 std::unique_ptr<Model> island;
 std::unique_ptr<Model> plant;
 std::unique_ptr<Model> platform2;
@@ -527,7 +542,21 @@ void init(GLFWwindow* window)
 	//cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
 	cam = std::make_unique<Camera>(0.0f, 0.0f, 0.0f);
 	player = std::make_unique<Model>("../Models/player2.dae", &textures);
-	platform = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform1_4 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform0_4 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform2_4 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform0_3 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform1_3 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform2_3 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform0_2 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform1_2 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform2_2 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform0_1 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform1_1 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform2_1 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform0_0 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform0_1 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform0_2 = std::make_unique<Model>("../Models/platform.dae", &textures);
 	island = std::make_unique<Model>("../Models/islandSmoothed.dae", &textures);
 	plant = std::make_unique<Model>("../Models/plant.dae", &textures);
 	platform2 = std::make_unique<Model>("../Models/platform.dae", &textures);
@@ -594,9 +623,24 @@ void init(GLFWwindow* window)
 	platform3->position = glm::vec3(-15.0f, 6.0f, 0.0f);
 	platform3->viewMatrix = view;
 	
-	platform->position = glm::vec3(10.0f, 0.0f, 0);
-	platform->viewMatrix = view;
+	platform1_4->position = glm::vec3(10.0f, 0.0f, 0.0f);
+	platform1_4->viewMatrix = view;
 
+	platform0_4->position = glm::vec3(10.0f, 0.0f, -5.0f);
+	platform0_4->viewMatrix = view;
+
+	platform2_4->position = glm::vec3(10.0f, 4.0f, 0.0f);
+	platform2_4->viewMatrix = view;
+
+	platform1_3->position = glm::vec3(15.0f, 0.0f, 0.0f);
+	platform1_3->viewMatrix = view;
+
+	platform0_3->position = glm::vec3(15.0f, 0.0f, -5.0f);
+	platform0_3->viewMatrix = view;
+
+	platform2_3->position = glm::vec3(15.0f, 0.0f, 5.0f);
+	platform2_3->viewMatrix = view;
+	
 	plant->position = glm::vec3(-3.0f, 2*(glm::abs(plant->maxVector.y) + glm::abs(plant->minVector.y)) , 0.0);
 	plant->viewMatrix = view;
 
@@ -642,7 +686,12 @@ void init(GLFWwindow* window)
 	text = std::make_unique<TextRenderer>(width, height);
 	models.push_back(std::move(player));
 	models.push_back(std::move(island));
-	models.push_back(std::move(platform));
+	models.push_back(std::move(platform1_4));
+	models.push_back(std::move(platform0_4));
+	models.push_back(std::move(platform2_4));
+	models.push_back(std::move(platform1_3));
+	models.push_back(std::move(platform0_3));
+	models.push_back(std::move(platform2_3));
 	models.push_back(std::move(plant));
 	models.push_back(std::move(platform2));
 	models.push_back(std::move(platform3));
