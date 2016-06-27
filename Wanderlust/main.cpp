@@ -656,7 +656,7 @@ void init(GLFWwindow* window)
 	platform2_0->position = glm::vec3(31.0f, 0.0f, 5.0f);
 	platform2_0->viewMatrix = view;
 
-	std::vector<std::vector<int>> sol = calcPath();
+	/*std::vector<std::vector<int>> sol = calcPath();
 	int xCount = 0;
 	int yCount = 0;
 	for (int i : sol[0]) {
@@ -669,7 +669,7 @@ void init(GLFWwindow* window)
 		yCount++;
 	}
 	std::cout << "xCount: " << xCount << std::endl;
-	std::cout << "yCount: " << yCount << std::endl;
+	std::cout << "yCount: " << yCount << std::endl;*/
 	plant->position = glm::vec3(-3.0f, 2*(glm::abs(plant->maxVector.y) + glm::abs(plant->minVector.y)) , 0.0);
 	plant->viewMatrix = view;
 
