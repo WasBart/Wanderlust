@@ -23,6 +23,14 @@ void Model::draw(){
 	}
 }
 
+
+void Model::updateChild(glm::mat4 modelIn){
+	child->meshes[0].viewMatrix = viewMatrix;
+	child->outModel = modelIn;
+	child->meshes[0].update(outModel * modelIn);
+	child->meshes[0].draw();
+}
+
 /*
 Updating all Meshes from this Model
 */
@@ -36,6 +44,8 @@ void Model::update(){
 		this->meshes[i].update(model);
 	}
 }
+
+
 
 void Model::loadModel(std::string path)
 {

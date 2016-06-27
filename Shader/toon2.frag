@@ -11,6 +11,7 @@ layout (location = 0) out vec4 fragColor;
 
 layout (binding = 0) uniform sampler2D tex;
 layout (binding = 2) uniform sampler2DShadow shadowMap;
+layout (depth_greater) out float gl_FragDepth;
 
 uniform vec4 singleColor;
 
@@ -81,6 +82,6 @@ void main()
 	else{
 	result = result * mat.diffuse;
 	}
-
+	gl_FragDepth = mix(1.0, gl_FragCoord.z, texture(tex, fragmentUV).w);
 	fragColor = mix(vec4(result, texture(tex,fragmentUV).w) , singleColor ,singleColor.w);
 }

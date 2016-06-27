@@ -130,5 +130,11 @@
     <None Include="..\Shader\text.frag">
       <Filter>Shader</Filter>
     </None>
+    <None Include="..\Shader\skyBox.frag">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="..\Shader\skyBox.vert">
+      <Filter>Shader</Filter>
+    </None>
   </ItemGroup>
 </Project>
