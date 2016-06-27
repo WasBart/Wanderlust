@@ -76,6 +76,8 @@ void keyboardInput(GLFWwindow*);
 void renderShadowMap();
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void RenderQuad();
+void onShapeHit(const physx::PxControllerShapeHit& hit);
+void print_GameOver(std::string message);
 std::vector<std::vector<int>> calcPath();
 
 
@@ -703,6 +705,11 @@ void init(GLFWwindow* window)
 	glUniform3f(lightDiffusePos, 1.0f, 1.0f, 1.0f);
 	glUniform3f(lightSpecularPos, 0.0f, 0.0f, 0.0f);
 
+	skyBoxShader->useShader();
+	modelView = glGetUniformLocation(skyBoxShader->programHandle, "view");
+	glUniformMatrix4fv(modelView, 1, GL_FALSE, glm::value_ptr(view));
+	modelProjection = glGetUniformLocation(skyBoxShader->programHandle, "projection");
+	glUniformMatrix4fv(modelProjection, 1, GL_FALSE, glm::value_ptr(projection));
 	
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
@@ -796,6 +803,22 @@ void print_message()
 	}
 }
 
+void print_GameOver(std::string message)
+{
+	if (messageTimer > 0) {
+		if (wireframeOn) {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
+		std::cout << "1,2,3" << std::endl;
+		std::cout << message << std::endl;
+		text->drawText(message,10 , height - 50, 10.0f);
+		messageTimer -= time_delta;
+		if (wireframeOn) {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		}
+	}
+}
+
 void draw(){
 
 
@@ -865,15 +888,13 @@ void draw(){
 	// Draw all other objects with textures
 	color = glm::vec4(0.0);
 	glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
-	skyBoxShader->useShader();
-	skyBox->draw();
+	
+	
 	shader->useShader();
-	skyBox->viewMatrix = glm::mat4(glm::mat3(view));
-	skyBox->draw();
-
 for (int i = 0; i < models.size(); i++){
 		if (frustumOn && i != 0 && i != 4 ){
 			if (frustum.boxInFrustum(boundaries[i]->getWorldBounds())){
+			
 				if (i == 3 && transparencyOn){
 					glEnable(GL_BLEND);
 					glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -941,6 +962,11 @@ for (int i = 0; i < models.size(); i++){
 		}
 		
 	}
+	glDepthFunc(GL_LEQUAL);
+	skyBox->viewMatrix = glm::mat4(glm::mat3(view));
+	skyBoxShader->useShader();
+	skyBox->draw();
+	glDepthFunc(GL_LESS);
 
 	// Draw particle system
 	parSys->draw(mvp);
@@ -987,6 +1013,7 @@ void update(float deltaTime)
 				disp.y = 0;
 			}
 		
+			if (characterController)
 		StepPhysX();
 			
 
@@ -1003,11 +1030,6 @@ void update(float deltaTime)
 		cam->eyeY = camPos.y;
 		cam->eyeZ = camPos.z;
 
-		rad += (glm::pi<float>() / 180.0f) * 60 * myTimeStep;
-		models[4]->position = glm::vec3(models[4]->position.x, models[4]->position.y, sin(rad) * 10.0f);
-
-		models[4]->child->outModel = glm::rotate(glm::mat4(), glm::radians(45.0f)*myTimeStep, glm::vec3(0, 1, 0)) * models[4]->child->outModel;
-
 		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), models[0]->center);
 		frustum.setCamDef(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), models[0]->center, cam->up);
 
@@ -1015,8 +1037,9 @@ void update(float deltaTime)
 		timeSim -= myTimeStep;
 
 		
+		
 		if (characterController->getPosition().y <= -40){
-			std::cout << "Game Over" << std::endl;
+			print_GameOver("Game Over");
 			characterController->setPosition(physx::PxExtendedVec3(0,0,0));
 			models[0]->position = glm::vec3(0, 0, 0);
 			pathTimer = 0;
@@ -1076,6 +1099,13 @@ void update(float deltaTime)
 		std::cout << "z-Wert: " << characterController->getPosition().z << std::endl;
 		
 	}
+
+	rad += (glm::pi<float>() / 180.0f) * 60 * deltaTime;
+	models[4]->position = glm::vec3(models[4]->position.x, models[4]->position.y, sin(rad) * 10.0f);
+
+	models[4]->child->outModel = glm::rotate(glm::mat4(), glm::radians(45.0f)*deltaTime, glm::vec3(0, 1, 0)) * models[4]->child->outModel;
+
+	
 }
 
 bool firstMouse = true;
@@ -1126,13 +1156,10 @@ void mouseMovementPoll(GLFWwindow* window, double xpos, double ypos)
 	view = cam->useUp(eye.xyz(), models[0]->center, camUp.xyz());
 	frustum.setCamDef(eye.xyz(), models[0]->center, camUp.xyz());
 	
-	GLint model_view = glGetUniformLocation(shader->programHandle, "view");
-	glUniformMatrix4fv(model_view, 1, GL_FALSE, glm::value_ptr(view));
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
 
-	std::cout << disp.y << std::endl;
 	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS){
 		if (!isJumping  && disp.y >= -0.1 && disp.y <= 0.1){
 			disp.y = 0.7;
@@ -1187,7 +1214,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			for (int i = 0; i < textures.size(); i++) {
 				glBindTexture(GL_TEXTURE_2D, i);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			}
 		}
 	}
@@ -1200,7 +1227,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			for (int i = 0; i < textures.size(); i++) {
 				glBindTexture(GL_TEXTURE_2D, i);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 			}
 		}
 		else if (mipmapsOn == 1) {
@@ -1210,7 +1237,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			for (int i = 0; i < textures.size(); i++) {
 				glBindTexture(GL_TEXTURE_2D, i);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 			}
 		}
 		else {
@@ -1471,6 +1498,10 @@ std::vector<std::vector<int>> calcPath()
 	sol.push_back(xValues);
 	sol.push_back(yValues);
 	return sol;
+}
+
+void onShapeHit(const physx::PxControllerShapeHit& h){
+	std::cout << "test" << std::endl;
 }
 
 
