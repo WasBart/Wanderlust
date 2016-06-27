@@ -159,6 +159,7 @@ boolean wireframeOn = false;
 boolean texfilterOn = true;
 int mipmapsOn = 0;
 boolean transparencyOn = true;
+bool accepted = false;
 
 GLfloat lastX = 400, lastY = 300;
 GLfloat yaw = 0.0f;
@@ -1039,16 +1040,26 @@ void update(float deltaTime)
 
 		if (characterController->getPosition().z < -3.2 && characterController->getPosition().z > -6.9 &&
 			characterController->getPosition().x < 40 && characterController->getPosition().x > 35.6 &&
-			characterController->getPosition().y >= 3.0) {
+			characterController->getPosition().y < 4.2 && characterController->getPosition().y > 4.0) {
+			std::cout << "You win!" << std::endl;
+			float timer = 0.0;
+			messageTimer = 2.0f;
+			while (timer < 3) {
+				timer += time_delta;
+				std::cout << "timer" << timer << std::endl;
+			}
+
 			characterController->setPosition(physx::PxExtendedVec3(0, 0, 0));
 			models[0]->position = glm::vec3(0, 0, 0);
-			messageTimer = 2.0f;
 			pathTimer = 0;
+			accepted = false;
 		}
 		
+
 		/*std::cout << "x-Wert: " << characterController->getPosition().x << std::endl;
 		std::cout << "z-Wert: " << characterController->getPosition().z << std::endl;*/
 		
+
 	}
 
 	rad += (glm::pi<float>() / 180.0f) * 60 * deltaTime;
