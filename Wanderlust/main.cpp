@@ -77,9 +77,10 @@ void renderShadowMap();
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void RenderQuad();
 void onShapeHit(const physx::PxControllerShapeHit& hit);
-void print_GameOver(std::string message);
+void print_youWin();
 std::vector<std::vector<int>> calcPath();
 
+float timer = 5.0f;
 
 GLuint textureID;
 std::unique_ptr<Shader> shader;
@@ -143,12 +144,14 @@ float timeSim = 0.0f;
 GLuint singleColorLoc;
 float pathTimer = 0;
 
+std::string message = "";
 std::string textMessage = "";
 float messageTimer = 0.0;
 
 GLfloat near_plane = 0.1f, far_plane = 100.0f;
 physx::PxReal myTimeStep = 1.0f / 60.0f;
 physx::PxVec3 disp;
+boolean gameOver = false;
 boolean isJumping = false;
 boolean frustumOn = true;
 boolean frametimeOn = true;
@@ -646,8 +649,8 @@ void init(GLFWwindow* window)
 	for (int i = 0; i < curPath.size() - 1; i += 2)
 	{
 		marked[curPath[i]][curPath[i+1]] = true;
-		std::cout << curPath[i] << std::endl;
-		std::cout << curPath[i+1] << std::endl;
+		/*std::cout << curPath[i] << std::endl;
+		std::cout << curPath[i+1] << std::endl;*/
 	}
 
 	plant->position = glm::vec3(-3.0f, 2*(glm::abs(plant->maxVector.y) + glm::abs(plant->minVector.y)) , 0.0);
@@ -803,15 +806,13 @@ void print_message()
 	}
 }
 
-void print_GameOver(std::string message)
-{
-	if (messageTimer > 0) {
+void print_youWin(){
+	if (messageTimer > 0){
+		message = "YOU WIN";
 		if (wireframeOn) {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
-		std::cout << "1,2,3" << std::endl;
-		std::cout << message << std::endl;
-		text->drawText(message,10 , height - 50, 10.0f);
+		text->drawText(message, height / 2.0f - 100, width / 2.0f - 100, 2.0f);
 		messageTimer -= time_delta;
 		if (wireframeOn) {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -819,54 +820,9 @@ void print_GameOver(std::string message)
 	}
 }
 
+
 void draw(){
 
-
-	/*
-	shader->useShader();
-
-
-	player->viewMatrix = view;
-
-	contour->activate();
-	player->draw(shader.get());
-	contour->deactivate();
-
-	shader->useShader();
-
-	sphere->viewMatrix = view;
-	sphere->draw(shader.get());
-
-	island->viewMatrix = view;
-	island->draw(shader.get());
-
-	if (frustumOn){
-	physx::PxBounds3 bounds = cube2->getWorldBounds();
-
-	if (frustum.boxInFrustum(bounds) != Frustum::OUTSIDE) {
-	island2->viewMatrix = view;
-	island2->draw(shader.get());
-	}
-	}
-	else{
-	island2->viewMatrix = view;
-	island2->draw(shader.get());
-	}
-
-
-
-
-	//path->viewMatrix = view;
-	//path->draw(shader.get());
-
-	platform->viewMatrix = view;
-	platform->draw(shader.get());
-	plattform2->viewMatrix = view;
-	plattform2->draw(shader.get());
-
-	glm::mat4x4 mvp = projection * view;
-	parSys->draw(glm::vec3(0.0, 0.0, 0.0), mvp);
-	*/
 
 	models[0]->viewMatrix = view;
 	for (int i = 1; i < models.size(); i++){
@@ -974,6 +930,7 @@ for (int i = 0; i < models.size(); i++){
 	// Draw all texts
 	print_fps();
 	print_message();
+	print_youWin();
 
 	// Draw contour
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -1039,7 +996,6 @@ void update(float deltaTime)
 		
 		
 		if (characterController->getPosition().y <= -40){
-			print_GameOver("Game Over");
 			characterController->setPosition(physx::PxExtendedVec3(0,0,0));
 			models[0]->position = glm::vec3(0, 0, 0);
 			pathTimer = 0;
@@ -1047,7 +1003,6 @@ void update(float deltaTime)
 		
 		if (characterController->getPosition().z < -3.2 && characterController->getPosition().z > -6.9 && 
 			characterController->getPosition().x < 12 && characterController->getPosition().x > 7.8){
-			std::cout << "Game Over" << std::endl;
 			characterController->setPosition(physx::PxExtendedVec3(0, 0, 0));
 			models[0]->position = glm::vec3(0, 0, 0);
 			pathTimer = 0;
@@ -1055,7 +1010,6 @@ void update(float deltaTime)
 		
 		if (characterController->getPosition().z < 1.8 && characterController->getPosition().z > -1.9 &&
 			characterController->getPosition().x < 19 && characterController->getPosition().x > 14.6){
-			std::cout << "Game Over" << std::endl;
 			characterController->setPosition(physx::PxExtendedVec3(0, 0, 0));
 			models[0]->position = glm::vec3(0, 0, 0);
 			pathTimer = 0;
@@ -1064,7 +1018,6 @@ void update(float deltaTime)
 		
 		if (characterController->getPosition().z < -3.2 && characterController->getPosition().z > -6.9 &&
 			characterController->getPosition().x < 19 && characterController->getPosition().x > 14.6){
-			std::cout << "Game Over" << std::endl;
 			characterController->setPosition(physx::PxExtendedVec3(0, 0, 0));
 			models[0]->position = glm::vec3(0, 0, 0);
 			pathTimer = 0;
@@ -1072,7 +1025,6 @@ void update(float deltaTime)
 
 		if (characterController->getPosition().z < 1.8 && characterController->getPosition().z > -1.9 &&
 			characterController->getPosition().x < 33 && characterController->getPosition().x > 28.6){
-			std::cout << "Game Over" << std::endl;
 			characterController->setPosition(physx::PxExtendedVec3(0, 0, 0));
 			models[0]->position = glm::vec3(0, 0, 0);
 			pathTimer = 0;
@@ -1080,7 +1032,6 @@ void update(float deltaTime)
 
 		if (characterController->getPosition().z < 6.8 && characterController->getPosition().z > 3.1 &&
 			characterController->getPosition().x < 33 && characterController->getPosition().x > 28.6){
-			std::cout << "Game Over" << std::endl;
 			characterController->setPosition(physx::PxExtendedVec3(0, 0, 0));
 			models[0]->position = glm::vec3(0, 0, 0);
 			pathTimer = 0;
@@ -1089,14 +1040,14 @@ void update(float deltaTime)
 		if (characterController->getPosition().z < -3.2 && characterController->getPosition().z > -6.9 &&
 			characterController->getPosition().x < 40 && characterController->getPosition().x > 35.6 &&
 			characterController->getPosition().y >= 3.0) {
-			std::cout << "You win!" << std::endl;
 			characterController->setPosition(physx::PxExtendedVec3(0, 0, 0));
 			models[0]->position = glm::vec3(0, 0, 0);
+			messageTimer = 2.0f;
 			pathTimer = 0;
 		}
 		
-		std::cout << "x-Wert: " << characterController->getPosition().x << std::endl;
-		std::cout << "z-Wert: " << characterController->getPosition().z << std::endl;
+		/*std::cout << "x-Wert: " << characterController->getPosition().x << std::endl;
+		std::cout << "z-Wert: " << characterController->getPosition().z << std::endl;*/
 		
 	}
 
@@ -1266,7 +1217,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 
 void keyboardInput(GLFWwindow* window){
-	const physx::PxControllerFilters filters(NULL, NULL, NULL);
+	
 
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE))
 	{
