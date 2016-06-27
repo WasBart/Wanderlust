@@ -23,10 +23,11 @@ void Model::draw(){
 	}
 }
 
+
 void Model::updateChild(glm::mat4 modelIn){
 	child->meshes[0].viewMatrix = viewMatrix;
 	child->outModel = modelIn;
-	child->meshes[0].update(modelIn);
+	child->meshes[0].update(outModel * modelIn);
 	child->meshes[0].draw();
 }
 

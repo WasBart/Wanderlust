@@ -11,6 +11,7 @@
 
 
 
+
 #ifdef _DEBUG
 #pragma comment(lib, "PhysX3DEBUG_x86.lib")
 #pragma comment(lib, "PhysX3CommonDEBUG_x86.lib")
@@ -74,15 +75,14 @@ void keyboardInput(GLFWwindow*);
 void renderShadowMap();
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void RenderQuad();
-void RenderScene(Shader* shader);
 
 
-GLuint planeVAO;
 
+
+GLuint textureID;
 std::unique_ptr<Shader> shader;
 std::unique_ptr<Shader> shadowMapShader;
-std::unique_ptr<Shader> toonShader;
-std::unique_ptr<Shader> debugDepthQuad;
+std::unique_ptr<Shader> skyBoxShader;
 
 
 
@@ -95,6 +95,9 @@ std::unique_ptr<Model> island;
 std::unique_ptr<Model> plant;
 std::unique_ptr<Model> platform2;
 std::unique_ptr<Model> platform3;
+std::unique_ptr<Model> island2;
+std::unique_ptr<Model> island3;
+std::unique_ptr<Model> skyBox;
 
 std::unique_ptr<TextRenderer> text;
 
@@ -374,6 +377,7 @@ int main(int argc, char** argv){
 		
 		// shadowMapRender
 		shadowMapShader->useShader();
+		glUniformMatrix4fv(glGetUniformLocation(shader->programHandle, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
 		glEnable(GL_POLYGON_OFFSET_FILL);
 		glPolygonOffset(4.f, 0.f);
 		glUniformMatrix4fv(1, 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
@@ -389,7 +393,6 @@ int main(int argc, char** argv){
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		shader->useShader();
-		
 		glUniformMatrix4fv(glGetUniformLocation(shader->programHandle, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, depthMap);
@@ -516,13 +519,10 @@ void init(GLFWwindow* window)
 
 	shader = std::make_unique<Shader>("../Shader/basic.vert",
 		"../Shader/toon2.frag");
-	toonShader = std::make_unique<Shader>("../Shader/basic.vert",
-		"../Shader/toon2.frag");
 	shadowMapShader = std::make_unique<Shader>("../Shader/shadowMapShader.vert",
 		"../Shader/shadowMapShader.fragment");
-	debugDepthQuad = std::make_unique<Shader>("../Shader/debugDepthQuad.vert", "../Shader/debugDepthQuad.frag");
-	
-
+	skyBoxShader = std::make_unique<Shader>("../Shader/skyBox.vert",
+		"../Shader/skyBox.frag");
 
 	//cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
 	cam = std::make_unique<Camera>(0.0f, 0.0f, 0.0f);
@@ -532,6 +532,13 @@ void init(GLFWwindow* window)
 	plant = std::make_unique<Model>("../Models/plant.dae", &textures);
 	platform2 = std::make_unique<Model>("../Models/platform.dae", &textures);
 	platform3 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	island2 = std::make_unique<Model>("../Models/islandSmoothed.dae", &textures);
+	island3 = std::make_unique<Model>("../Models/islandSmoothed.dae", &textures);
+	skyBox = std::make_unique<Model>("../Models/skyBox.dae", &textures);
+
+	//SkyBox
+	//
+	
 
 	//Borders
 
@@ -547,51 +554,14 @@ void init(GLFWwindow* window)
 	contour = std::make_unique<Contour>();
 	contour->initialize(width, height);
 	
-
-	//ToonShader
-	/*toonShader->useShader();
-
-	int modelView = glGetUniformLocation(shader->programHandle, "view");
-	glUniformMatrix4fv(modelView, 1, GL_FALSE, glm::value_ptr(view));
-
-	int modelProjection = glGetUniformLocation(shader->programHandle, "projection");
-	glUniformMatrix4fv(modelProjection, 1, GL_FALSE, glm::value_ptr(projection));
-
-	//Setting MaterialProperties
-
-	GLint matAmbientPos = glGetUniformLocation(shader->programHandle, "mat.ambient");
-	GLint matDiffusePos = glGetUniformLocation(shader->programHandle, "mat.diffuse");
-	GLint matSpecularPos = glGetUniformLocation(shader->programHandle, "mat.specular");
-	GLint matShinePos = glGetUniformLocation(shader->programHandle, "mat.shininess");
-
-	glUniform3f(matAmbientPos, 0.1f, 0.1f, 0.1f);
-	glUniform3f(matDiffusePos, 0.3f, 0.3f, 0.7f);
-	glUniform3f(matSpecularPos, 0.0f, 0.0f, 0.0f);
-	glUniform1f(matShinePos, 40.0f);
-
-
-	//Setting LightPropertiesl
-
-	GLint lightAmbientPos = glGetUniformLocation(shader->programHandle, "light.ambient");
-	GLint lightDiffusePos = glGetUniformLocation(shader->programHandle, "light.diffuse");
-	GLint lightSpecularPos = glGetUniformLocation(shader->programHandle, "light.specular");
-	GLint lightDirectionPos = glGetUniformLocation(shader->programHandle, "light.direction");
-
-	glUniform3f(lightDirectionPos, lightPos.x, lightPos.y, lightPos.z);
-	glUniform3f(lightAmbientPos, 0.5f, 0.5f, 0.5f);
-	glUniform3f(lightDiffusePos, 1.0f, 1.0f, 1.0f);
-	glUniform3f(lightSpecularPos, 0.0f, 0.0f, 0.0f);
-	*/
-	
-
 	glm::vec3 islandPos(0.0f, 0.0f, 0.0f);
 	island->position = islandPos;
 	island->viewMatrix = view;
 
-	platform2->position = glm::vec3(-15.0f, 0.0f, 0.0f) ;
+	platform2->position = glm::vec3(-25.0f, 0.0f, 0.0f) ;
 	platform2->viewMatrix = view;
 
-	platform3->position = glm::vec3(-15.0f, 6.0f, 0.0f);
+	platform3->position = glm::vec3(-5.0f, 0.0f, 0.0f);
 	platform3->viewMatrix = view;
 	
 	platform2->child = platform3.get();
@@ -599,10 +569,20 @@ void init(GLFWwindow* window)
 	platform->position = glm::vec3(10.0f, 0.0f, 0);
 	platform->viewMatrix = view;
 
-	plant->position = glm::vec3(-3.0f, 2*(glm::abs(plant->maxVector.y) + glm::abs(plant->minVector.y)) , 0.0);
+	plant->position = glm::vec3(-3.0f, 2*(glm::abs(plant->maxVector.y) + glm::abs(plant->minVector.y))-0.1f, 0.0);
 	plant->viewMatrix = view;
 
+
+	island2->position = glm::vec3(15.0f, 1.0f, 0.0f);
+	island2->viewMatrix = view;
+
+	island3->position = glm::vec3(30.0f, 3.0f, 0.0f);
+	island3->viewMatrix = view;
 	platform3->draw();
+
+	skyBox->position = glm::vec3(0, 0, 0);
+	skyBox->viewMatrix = view;
+
 	
 	//Basic Shader
 	shader->useShader();
@@ -643,12 +623,16 @@ void init(GLFWwindow* window)
 	
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
+
+
 	text = std::make_unique<TextRenderer>(width, height);
 	models.push_back(std::move(player));
 	models.push_back(std::move(island));
 	models.push_back(std::move(platform));
 	models.push_back(std::move(plant));
 	models.push_back(std::move(platform2));
+	models.push_back(std::move(island2));
+	models.push_back(std::move(island3));
 	//models.push_back(std::move(platform3));
 }
 
@@ -770,12 +754,16 @@ void draw(){
 	glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
 	models[0]->draw();
 	contour->deactivate();
-
+	
 	// Draw all other objects with textures
 	color = glm::vec4(0.0);
 	glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
+	skyBoxShader->useShader();
+	skyBox->draw();
 	shader->useShader();
-	for (int i = 0; i < models.size(); i++){
+	skyBox->viewMatrix = glm::mat4(glm::mat3(view));
+	skyBox->draw();
+for (int i = 0; i < models.size(); i++){
 		if (frustumOn && i != 0 && i != 4 ){
 			if (frustum.boxInFrustum(boundaries[i]->getWorldBounds())){
 				if (i == 3 && transparencyOn){
@@ -854,12 +842,14 @@ void update(float time_delta)
 				disp.y = 0;
 				isJumping = false;
 			}
-			else
+			else if (!(collisionFlags & physx::PxControllerCollisionFlag::eCOLLISION_DOWN) || isJumping)
 			{
-				disp.y -= 0.1f;
+				disp.y -= 0.05f;
+			}
+			else{
+				disp.y = 0;
 			}
 		
-
 		StepPhysX();
 			
 
@@ -876,24 +866,23 @@ void update(float time_delta)
 		cam->eyeY = camPos.y;
 		cam->eyeZ = camPos.z;
 
+		rad += (glm::pi<float>() / 180.0f) * 60 * time_delta;
+		models[4]->position = glm::vec3(models[4]->position.x, models[4]->position.y, sin(rad) * 10.0f);
+
+		models[4]->child->outModel = glm::rotate(glm::mat4(), glm::radians(45.0f)*time_delta, glm::vec3(0, 1, 0)) * models[4]->child->outModel;
+
 		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), models[0]->center);
 		frustum.setCamDef(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), models[0]->center, cam->up);
 
 		disp.x = 0; disp.z = 0;
 		timeSim -= myTimeStep;
 
-
-		rad += (glm::pi<float>() / 180.0f) * 60 * time_delta;
-		models[4]->position = glm::vec3(models[4]->position.x, models[4]->position.y, sin(rad) * 10.0f);
-
-		glm::mat4 model = models[4]->outModel;
-		glm::mat4 modelT = glm::translate(model, glm::vec3(0,4,0));
-		auto mod = models[4]->child;
-		//model = glm::rotate(model, glm::radians(30.0f), glm::vec3(0, 1, 0));
-
-		shader->useShader();
 		
-	
+		if (characterController->getPosition().y <= -40){
+			std::cout << "Game Over" << std::endl;
+			characterController->setPosition(physx::PxExtendedVec3(0,0,0));
+			models[0]->position = glm::vec3(0, 0, 0);
+		}
 		
 	}
 }
@@ -955,7 +944,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS){
 		if (!isJumping){
-			disp.y = 1;
+			disp.y = 0.7;
 			isJumping = true;
 		}
 	}
@@ -1200,7 +1189,7 @@ void keyboardInput(GLFWwindow* window){
 		cam->eyeZ = camPos.z;
 
 		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), models[0]->center);
-		frustum.setCamDef(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), models[0]->center, cam->up);
+		frustum.setCamDef(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), models[0]->center, cam->up);	
 
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT))

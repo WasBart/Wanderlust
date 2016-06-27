@@ -121,6 +121,8 @@
     <None Include="..\Shader\particle.vert" />
     <None Include="..\Shader\shadowMapShader.fragment" />
     <None Include="..\Shader\shadowMapShader.vert" />
+    <None Include="..\Shader\skyBox.frag" />
+    <None Include="..\Shader\skyBox.vert" />
     <None Include="..\Shader\sun.frag" />
     <None Include="..\Shader\text.frag" />
     <None Include="..\Shader\text.vert" />
