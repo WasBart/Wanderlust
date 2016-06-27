@@ -88,6 +88,7 @@ std::unique_ptr<Camera> cam;
 
 std::vector<std::unique_ptr<Model>> models;
 std::unique_ptr<Model> platforms[3][5];
+bool marked[3][5];
 std::unique_ptr<Model> player;
 std::unique_ptr<Model> platform1_3;
 std::unique_ptr<Model> platform0_3;
@@ -105,6 +106,7 @@ std::unique_ptr<Model> island;
 std::unique_ptr<Model> plant;
 std::unique_ptr<Model> platform2;
 std::unique_ptr<Model> platform3;
+std::unique_ptr<Model> goal;
 std::unique_ptr<Model> island2;
 std::unique_ptr<Model> island3;
 std::unique_ptr<Model> skyBox;
@@ -112,6 +114,8 @@ std::unique_ptr<Model> skyBox;
 std::unique_ptr<TextRenderer> text;
 
 std::vector<GLuint> textures;
+std::vector<std::vector<int>> paths;
+std::vector<int> curPath;
 
 //Border Array
 
@@ -135,6 +139,7 @@ float rad = 0.0f;
 float time_delta;
 float timeSim = 0.0f;
 GLuint singleColorLoc;
+float pathTimer = 0;
 
 std::string textMessage = "";
 float messageTimer = 0.0;
@@ -511,6 +516,7 @@ void init(GLFWwindow* window)
 	island2 = std::make_unique<Model>("../Models/islandSmoothed.dae", &textures);
 	island3 = std::make_unique<Model>("../Models/islandSmoothed.dae", &textures);
 	skyBox = std::make_unique<Model>("../Models/skyBox.dae", &textures);
+	goal = std::make_unique<Model>("../Models/platform.dae", &textures);
 
 
 	//Borders
@@ -573,6 +579,9 @@ void init(GLFWwindow* window)
 	platform2_0->position = glm::vec3(31.0f, 0.0f, 5.0f);
 	platform2_0->viewMatrix = view;
 
+	goal->position = glm::vec3(38.0f, 3.0f, -5.0f);
+	goal->viewMatrix = view;
+
 	/*std::vector<std::vector<int>> sol = calcPath();
 	int xCount = 0;
 	int yCount = 0;
@@ -587,6 +596,57 @@ void init(GLFWwindow* window)
 	}
 	std::cout << "xCount: " << xCount << std::endl;
 	std::cout << "yCount: " << yCount << std::endl;*/
+
+	std::vector<int> path1x = { 1, 2, 2, 2, 1, 0, 0 };
+	std::vector<int> path1y = { 3, 3, 2, 1, 1, 1, 0 };
+	std::vector<int> path1;
+	for (int i = 0; i < path1x.size(); i++) 
+	{
+		path1.push_back(path1x[i]);
+		path1.push_back(path1y[i]);
+	}
+
+	std::vector<int> path2x = { 1, 1, 0, 0, 0 };
+	std::vector<int> path2y = { 3, 2, 2, 1, 0 };
+	std::vector<int> path2;
+	for (int i = 0; i < path2x.size(); i++)
+	{
+		path2.push_back(path2x[i]);
+		path2.push_back(path2y[i]);
+	}
+
+	std::vector<int> path3x = { 1, 2, 2, 2, 2, 1, 0 };
+	std::vector<int> path3y = { 3, 3, 2, 1, 0, 0, 0 };
+	std::vector<int> path3;
+	for (int i = 0; i < path3x.size(); i++)
+	{
+		path3.push_back(path3x[i]);
+		path3.push_back(path3y[i]);
+	}
+
+	std::vector<int> path4x = { 1, 0, 0, 0, 0 };
+	std::vector<int> path4y = { 3, 3, 2, 1, 0 };
+	std::vector<int> path4;
+	for (int i = 0; i < path4x.size(); i++)
+	{
+		path4.push_back(path4x[i]);
+		path4.push_back(path4y[i]);
+	}
+
+	paths.push_back(path1);
+	paths.push_back(path2);
+	paths.push_back(path3);
+	paths.push_back(path4);
+
+	srand(time(0));
+	curPath = paths[rand() % 4];
+	
+	for (int i = 0; i < curPath.size() - 1; i += 2)
+	{
+		marked[curPath[i]][curPath[i+1]] = true;
+		std::cout << curPath[i] << std::endl;
+		std::cout << curPath[i+1] << std::endl;
+	}
 
 	plant->position = glm::vec3(-3.0f, 2*(glm::abs(plant->maxVector.y) + glm::abs(plant->minVector.y)) , 0.0);
 
@@ -665,6 +725,7 @@ void init(GLFWwindow* window)
 	models.push_back(std::move(platform1_0));
 	models.push_back(std::move(platform0_0));
 	models.push_back(std::move(platform2_0));
+	models.push_back(std::move(goal));
 
 	platforms[0][0] = std::move(platform0_0);
 	platforms[0][1] = std::move(platform0_1);
@@ -809,6 +870,7 @@ void draw(){
 	shader->useShader();
 	skyBox->viewMatrix = glm::mat4(glm::mat3(view));
 	skyBox->draw();
+
 for (int i = 0; i < models.size(); i++){
 		if (frustumOn && i != 0 && i != 4 ){
 			if (frustum.boxInFrustum(boundaries[i]->getWorldBounds())){
@@ -819,7 +881,36 @@ for (int i = 0; i < models.size(); i++){
 				if (i == 3) {
 					glDisable(GL_CULL_FACE);
 				}
-				models[i]->draw();
+				if (i == 2 || i == 6 || i == 9 || i == 12 || i == 10 || i == 11 || i == 14){
+					if (pathTimer < 200)
+					{
+						color = glm::vec4(0.0, 0.0, 1.0, 1.0);
+						glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
+						models[i]->draw();
+					}	
+					else
+					{
+						models[i]->draw();
+					}
+				}
+				else if (i == 16) {
+					if (pathTimer < 200)
+					{
+						color = glm::vec4(1.0, 1.0, 0.0, 1.0);
+						glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
+						models[i]->draw();
+					}
+					else
+					{
+						models[i]->draw();
+					}
+				}
+				else
+				{
+					models[i]->draw();
+				}
+				color = glm::vec4(0.0);
+				glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
 				if (i == 3 && transparencyOn){
 					glDisable(GL_BLEND);
 				}
@@ -848,7 +939,7 @@ for (int i = 0; i < models.size(); i++){
 				glEnable(GL_CULL_FACE);
 			}
 		}
-
+		
 	}
 
 	// Draw particle system
@@ -866,7 +957,7 @@ for (int i = 0; i < models.size(); i++){
 	contour->draw();
 	shader->useShader();
 
-
+	pathTimer += 100 * time_delta;
 }
 
 void update(float deltaTime)
@@ -928,7 +1019,61 @@ void update(float deltaTime)
 			std::cout << "Game Over" << std::endl;
 			characterController->setPosition(physx::PxExtendedVec3(0,0,0));
 			models[0]->position = glm::vec3(0, 0, 0);
+			pathTimer = 0;
 		}
+		
+		if (characterController->getPosition().z < -3.2 && characterController->getPosition().z > -6.9 && 
+			characterController->getPosition().x < 12 && characterController->getPosition().x > 7.8){
+			std::cout << "Game Over" << std::endl;
+			characterController->setPosition(physx::PxExtendedVec3(0, 0, 0));
+			models[0]->position = glm::vec3(0, 0, 0);
+			pathTimer = 0;
+		}
+		
+		if (characterController->getPosition().z < 1.8 && characterController->getPosition().z > -1.9 &&
+			characterController->getPosition().x < 19 && characterController->getPosition().x > 14.6){
+			std::cout << "Game Over" << std::endl;
+			characterController->setPosition(physx::PxExtendedVec3(0, 0, 0));
+			models[0]->position = glm::vec3(0, 0, 0);
+			pathTimer = 0;
+		}
+		
+		
+		if (characterController->getPosition().z < -3.2 && characterController->getPosition().z > -6.9 &&
+			characterController->getPosition().x < 19 && characterController->getPosition().x > 14.6){
+			std::cout << "Game Over" << std::endl;
+			characterController->setPosition(physx::PxExtendedVec3(0, 0, 0));
+			models[0]->position = glm::vec3(0, 0, 0);
+			pathTimer = 0;
+		}
+
+		if (characterController->getPosition().z < 1.8 && characterController->getPosition().z > -1.9 &&
+			characterController->getPosition().x < 33 && characterController->getPosition().x > 28.6){
+			std::cout << "Game Over" << std::endl;
+			characterController->setPosition(physx::PxExtendedVec3(0, 0, 0));
+			models[0]->position = glm::vec3(0, 0, 0);
+			pathTimer = 0;
+		}
+
+		if (characterController->getPosition().z < 6.8 && characterController->getPosition().z > 3.1 &&
+			characterController->getPosition().x < 33 && characterController->getPosition().x > 28.6){
+			std::cout << "Game Over" << std::endl;
+			characterController->setPosition(physx::PxExtendedVec3(0, 0, 0));
+			models[0]->position = glm::vec3(0, 0, 0);
+			pathTimer = 0;
+		}
+
+		if (characterController->getPosition().z < -3.2 && characterController->getPosition().z > -6.9 &&
+			characterController->getPosition().x < 40 && characterController->getPosition().x > 35.6 &&
+			characterController->getPosition().y >= 3.0) {
+			std::cout << "You win!" << std::endl;
+			characterController->setPosition(physx::PxExtendedVec3(0, 0, 0));
+			models[0]->position = glm::vec3(0, 0, 0);
+			pathTimer = 0;
+		}
+		
+		std::cout << "x-Wert: " << characterController->getPosition().x << std::endl;
+		std::cout << "z-Wert: " << characterController->getPosition().z << std::endl;
 		
 	}
 }
