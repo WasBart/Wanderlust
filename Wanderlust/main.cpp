@@ -1,5 +1,6 @@
 #include <iostream>
 #include <memory>
+#include <ctime>
 #include <glew\glew.h>
 #include <GLFW\glfw3.h>
 #include <PxPhysicsAPI.h> 
@@ -75,6 +76,7 @@ void renderShadowMap();
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void RenderQuad();
 void RenderScene(Shader* shader);
+std::vector<std::vector<int>> calcPath();
 
 
 GLuint planeVAO;
@@ -91,11 +93,8 @@ std::unique_ptr<Camera> cam;
 std::vector<std::unique_ptr<Model>> models;
 std::unique_ptr<Model> platforms[3][5];
 std::unique_ptr<Model> player;
-std::unique_ptr<Model> platform1_4;
-std::unique_ptr<Model> platform0_4;
-std::unique_ptr<Model> platform2_4;
-std::unique_ptr<Model> platform0_3;
 std::unique_ptr<Model> platform1_3;
+std::unique_ptr<Model> platform0_3;
 std::unique_ptr<Model> platform2_3;
 std::unique_ptr<Model> platform0_2;
 std::unique_ptr<Model> platform1_2;
@@ -103,6 +102,9 @@ std::unique_ptr<Model> platform2_2;
 std::unique_ptr<Model> platform0_1;
 std::unique_ptr<Model> platform1_1;
 std::unique_ptr<Model> platform2_1;
+std::unique_ptr<Model> platform0_0;
+std::unique_ptr<Model> platform1_0;
+std::unique_ptr<Model> platform2_0;
 std::unique_ptr<Model> island;
 std::unique_ptr<Model> plant;
 std::unique_ptr<Model> platform2;
@@ -125,7 +127,8 @@ glm::vec3 camPos;
 glm::vec3 direction = glm::vec3(0.0,0.0,-1.0);
 glm::mat4 lightProjection; 
 
-const glm::vec3 camInitial = glm::vec3(0.0f, 0.0f, -1.0f);
+//const glm::vec3 camInitial = glm::vec3(0.0f, 0.0f, -1.0f);
+const glm::vec3 camInitial = glm::vec3(0.0f, -0.3f, -1.0f);
 glm::vec3 camDirection = camInitial;
 const glm::vec4 clearColor = glm::vec4(0.35f, 0.36f, 0.43f, 1.0f);
 float width;
@@ -539,11 +542,8 @@ void init(GLFWwindow* window)
 	//cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
 	cam = std::make_unique<Camera>(0.0f, 0.0f, 0.0f);
 	player = std::make_unique<Model>("../Models/player2.dae", &textures);
-	platform1_4 = std::make_unique<Model>("../Models/platform.dae", &textures);
-	platform0_4 = std::make_unique<Model>("../Models/platform.dae", &textures);
-	platform2_4 = std::make_unique<Model>("../Models/platform.dae", &textures);
-	platform0_3 = std::make_unique<Model>("../Models/platform.dae", &textures);
 	platform1_3 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform0_3 = std::make_unique<Model>("../Models/platform.dae", &textures);
 	platform2_3 = std::make_unique<Model>("../Models/platform.dae", &textures);
 	platform0_2 = std::make_unique<Model>("../Models/platform.dae", &textures);
 	platform1_2 = std::make_unique<Model>("../Models/platform.dae", &textures);
@@ -551,6 +551,9 @@ void init(GLFWwindow* window)
 	platform0_1 = std::make_unique<Model>("../Models/platform.dae", &textures);
 	platform1_1 = std::make_unique<Model>("../Models/platform.dae", &textures);
 	platform2_1 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform0_0 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform1_0 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform2_0 = std::make_unique<Model>("../Models/platform.dae", &textures);
 	island = std::make_unique<Model>("../Models/islandSmoothed.dae", &textures);
 	plant = std::make_unique<Model>("../Models/plant.dae", &textures);
 	platform2 = std::make_unique<Model>("../Models/platform.dae", &textures);
@@ -617,42 +620,56 @@ void init(GLFWwindow* window)
 	platform3->position = glm::vec3(-15.0f, 6.0f, 0.0f);
 	platform3->viewMatrix = view;
 	
-	platform1_4->position = glm::vec3(10.0f, 0.0f, 0.0f);
-	platform1_4->viewMatrix = view;
-
-	platform0_4->position = glm::vec3(10.0f, 0.0f, -5.0f);
-	platform0_4->viewMatrix = view;
-
-	platform2_4->position = glm::vec3(10.0f, 0.0f, 5.0f);
-	platform2_4->viewMatrix = view;
-
-	platform1_3->position = glm::vec3(15.0f, 0.0f, 0.0f);
+	platform1_3->position = glm::vec3(10.0f, 0.0f, 0.0f);
 	platform1_3->viewMatrix = view;
 
-	platform0_3->position = glm::vec3(15.0f, 0.0f, -5.0f);
+	platform0_3->position = glm::vec3(10.0f, 0.0f, -5.0f);
 	platform0_3->viewMatrix = view;
 
-	platform2_3->position = glm::vec3(15.0f, 0.0f, 5.0f);
+	platform2_3->position = glm::vec3(10.0f, 0.0f, 5.0f);
 	platform2_3->viewMatrix = view;
 
-	platform1_2->position = glm::vec3(20.0f, 0.0f, 0.0f);
+	platform1_2->position = glm::vec3(17.0f, 0.0f, 0.0f);
 	platform1_2->viewMatrix = view;
 
-	platform0_2->position = glm::vec3(20.0f, 0.0f, -5.0f);
+	platform0_2->position = glm::vec3(17.0f, 0.0f, -5.0f);
 	platform0_2->viewMatrix = view;
 
-	platform2_2->position = glm::vec3(20.0f, 0.0f, 5.0f);
+	platform2_2->position = glm::vec3(17.0f, 0.0f, 5.0f);
 	platform2_2->viewMatrix = view;
 
-	platform1_1->position = glm::vec3(25.0f, 0.0f, 0.0f);
+	platform1_1->position = glm::vec3(24.0f, 0.0f, 0.0f);
 	platform1_1->viewMatrix = view;
 
-	platform0_1->position = glm::vec3(25.0f, 0.0f, -5.0f);
+	platform0_1->position = glm::vec3(24.0f, 0.0f, -5.0f);
 	platform0_1->viewMatrix = view;
 
-	platform2_1->position = glm::vec3(25.0f, 0.0f, 5.0f);
+	platform2_1->position = glm::vec3(24.0f, 0.0f, 5.0f);
 	platform2_1->viewMatrix = view;
 
+	platform1_0->position = glm::vec3(31.0f, 0.0f, 0.0f);
+	platform1_0->viewMatrix = view;
+
+	platform0_0->position = glm::vec3(31.0f, 0.0f, -5.0f);
+	platform0_0->viewMatrix = view;
+
+	platform2_0->position = glm::vec3(31.0f, 0.0f, 5.0f);
+	platform2_0->viewMatrix = view;
+
+	std::vector<std::vector<int>> sol = calcPath();
+	int xCount = 0;
+	int yCount = 0;
+	for (int i : sol[0]) {
+		std::cout << i << std::endl;
+		xCount++;
+	}
+
+	for (int i : sol[1]) {
+		std::cout << i << std::endl;
+		yCount++;
+	}
+	std::cout << "xCount: " << xCount << std::endl;
+	std::cout << "yCount: " << yCount << std::endl;
 	plant->position = glm::vec3(-3.0f, 2*(glm::abs(plant->maxVector.y) + glm::abs(plant->minVector.y)) , 0.0);
 	plant->viewMatrix = view;
 
@@ -698,13 +715,10 @@ void init(GLFWwindow* window)
 	text = std::make_unique<TextRenderer>(width, height);
 	models.push_back(std::move(player));
 	models.push_back(std::move(island));
-	models.push_back(std::move(platform1_4));
+	models.push_back(std::move(platform1_3));
 	models.push_back(std::move(plant));
 	models.push_back(std::move(platform2));
 	models.push_back(std::move(platform3));
-	models.push_back(std::move(platform0_4));
-	models.push_back(std::move(platform2_4));
-	models.push_back(std::move(platform1_3));
 	models.push_back(std::move(platform0_3));
 	models.push_back(std::move(platform2_3));
 	models.push_back(std::move(platform1_2));
@@ -713,6 +727,25 @@ void init(GLFWwindow* window)
 	models.push_back(std::move(platform1_1));
 	models.push_back(std::move(platform0_1));
 	models.push_back(std::move(platform2_1));
+	models.push_back(std::move(platform1_0));
+	models.push_back(std::move(platform0_0));
+	models.push_back(std::move(platform2_0));
+
+	platforms[0][0] = std::move(platform0_0);
+	platforms[0][1] = std::move(platform0_1);
+	platforms[0][2] = std::move(platform0_2);
+	platforms[0][3] = std::move(platform0_3);
+
+	platforms[1][0] = std::move(platform1_0);
+	platforms[1][1] = std::move(platform1_1);
+	platforms[1][2] = std::move(platform1_2);
+	platforms[1][3] = std::move(platform1_0);
+
+	platforms[2][0] = std::move(platform2_0);
+	platforms[2][1] = std::move(platform2_1);
+	platforms[2][2] = std::move(platform2_2);
+	platforms[2][3] = std::move(platform2_3);
+
 }
 
 
@@ -1080,7 +1113,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	if (key == GLFW_KEY_F4 && action == GLFW_PRESS) {
 		texfilterOn = !texfilterOn;
 		if (texfilterOn) {
-			textMessage = "Texture-Filterung: Bilinear";
+			textMessage = "Texture-Filtering: Bilinear";
 			messageTimer = 2.0f;
 
 			for (int i = 0; i < textures.size(); i++) {
@@ -1312,6 +1345,74 @@ void renderShadowMap(){
 		models[i]->draw();
 		glUniform1f(8, 0.0f);
 	}
+}
+
+std::vector<std::vector<int>> calcPath()
+{
+	bool valid = false;
+	int x = 1;
+	int y = 3;
+	int randX = 0;
+	int randY = 0;
+	std::vector<std::vector<int>> sol;
+	std::vector<int> xValues;
+	std::vector<int> yValues;
+	
+
+	xValues.push_back(1);
+	yValues.push_back(3);
+
+	srand(time(0));
+	while (x != 1 || y != 0)
+	{
+		randX = rand() % 2;
+		randY = rand() % 2;
+
+		switch (randX)
+		{
+		case(0) : randX = -1;
+			break;
+		case(1) : randX = 1;
+			break;
+		}
+
+		switch (randY)
+		{
+		case(0) : randY = -1;
+			break;
+		case(1) : randY = 1;
+			break;
+		}
+
+		if (x + randX >= 0 && x + randX <= 2)
+		{
+			
+		}
+		else 
+		{
+			continue;
+		}
+
+		if (y + randY >= 0 && y + randY <= 3)
+		{
+			
+			
+		}
+		else
+		{
+			continue;
+		}
+		x = x + randX;
+		y = y + randY;
+		xValues.push_back(x);
+		yValues.push_back(y);
+	}
+	xValues.push_back(1);
+	yValues.push_back(0);
+
+	sol.push_back(xValues);
+	sol.push_back(yValues);
+	return sol;
 }
 
 
