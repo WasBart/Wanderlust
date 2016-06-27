@@ -869,12 +869,12 @@ for (int i = 0; i < models.size(); i++){
 
 }
 
-void update(float time_delta)
+void update(float deltaTime)
 {
 
 	const physx::PxControllerFilters filters(NULL, NULL, NULL);
 
-	timeSim += time_delta;
+	timeSim += deltaTime;
 	if (timeSim >= myTimeStep){
 
 		if (disp.y != 0){
@@ -912,10 +912,10 @@ void update(float time_delta)
 		cam->eyeY = camPos.y;
 		cam->eyeZ = camPos.z;
 
-		rad += (glm::pi<float>() / 180.0f) * 60 * time_delta;
+		rad += (glm::pi<float>() / 180.0f) * 60 * myTimeStep;
 		models[4]->position = glm::vec3(models[4]->position.x, models[4]->position.y, sin(rad) * 10.0f);
 
-		models[4]->child->outModel = glm::rotate(glm::mat4(), glm::radians(45.0f)*time_delta, glm::vec3(0, 1, 0)) * models[4]->child->outModel;
+		models[4]->child->outModel = glm::rotate(glm::mat4(), glm::radians(45.0f)*myTimeStep, glm::vec3(0, 1, 0)) * models[4]->child->outModel;
 
 		view = cam->update(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), models[0]->center);
 		frustum.setCamDef(glm::vec3(cam->eyeX, cam->eyeY, cam->eyeZ), models[0]->center, cam->up);
@@ -987,9 +987,9 @@ void mouseMovementPoll(GLFWwindow* window, double xpos, double ypos)
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods){
 
-
+	std::cout << disp.y << std::endl;
 	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS){
-		if (!isJumping){
+		if (!isJumping  && disp.y >= -0.1 && disp.y <= 0.1){
 			disp.y = 0.7;
 			isJumping = true;
 		}
