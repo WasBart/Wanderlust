@@ -1,6 +1,7 @@
 #include <iostream>
 #include <memory>
 #include <ctime>
+#include <windows.h>
 #include <glew\glew.h>
 #include <GLFW\glfw3.h>
 #include <PxPhysicsAPI.h> 
@@ -150,6 +151,7 @@ float time_delta;
 float timeSim = 0.0f;
 GLuint singleColorLoc;
 float pathTimer = 0;
+
 
 std::string message = "";
 std::string textMessage = "";
@@ -1081,16 +1083,20 @@ void update(float deltaTime)
 
 		//goal->position = glm::vec3(72.0f, 26.0f, 30.0f);
 		
-		std::cout << characterController->getPosition().x << " " << characterController->getPosition().z << " " << characterController->getPosition().y << std::endl;
+		//std::cout << characterController->getPosition().x << " " << characterController->getPosition().z << " " << characterController->getPosition().y << std::endl;
 		if (characterController->getPosition().x < 79.90f && characterController->getPosition().x > 70.8 &&
 			characterController->getPosition().z < 31.4 && characterController->getPosition().z > 28.4 &&
 			characterController->getPosition().y < 27.2 && characterController->getPosition().y > 27.0) {
 			std::cout << "You win!" << std::endl;
-			float timer = 0.0;
+			
 			messageTimer = 2.0f;
-			while (timer < 3) {
-				timer += time_delta;
-			}
+
+			float winTimer = 0;
+			Sleep(100);
+			/*while (winTimer < 5.0) {
+				winTimer += time_delta;
+				//std::cout << "timer" << winTimer << std::endl;
+			}*/
 
 			characterController->setPosition(physx::PxExtendedVec3(0, 0, 0));
 			models[0]->position = glm::vec3(0, 0, 0);
