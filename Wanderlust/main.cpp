@@ -112,7 +112,14 @@ std::unique_ptr<Model> platform3;
 std::unique_ptr<Model> goal;
 std::unique_ptr<Model> island2;
 std::unique_ptr<Model> island3;
+std::unique_ptr<Model> island4;
 std::unique_ptr<Model> skyBox;
+std::unique_ptr<Model> platform4;
+std::unique_ptr<Model> platform5;
+std::unique_ptr<Model> platform6;
+std::unique_ptr<Model> platform7;
+std::unique_ptr<Model> platform8;
+std::unique_ptr<Model> platform9;
 
 std::unique_ptr<TextRenderer> text;
 
@@ -365,8 +372,8 @@ int main(int argc, char** argv){
 		glm::mat4 lightView;
 		glm::mat4 lightSpaceMatrix;
 
-
-		lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f,  0.01f,  100.0f);
+		
+		lightProjection = glm::ortho(-20.0f, 20.0f, -15.0f, 20.0f,  -20.0f,  20.0f);
 		lightView = glm::lookAt(lightPos + models[0]->position, models[0]->center, glm::vec3(0.0, 1.0, 0.0));
 		lightSpaceMatrix = lightProjection * lightView;
 		
@@ -519,15 +526,22 @@ void init(GLFWwindow* window)
 	plant = std::make_unique<Model>("../Models/plant.dae", &textures);
 	platform2 = std::make_unique<Model>("../Models/platform.dae", &textures);
 	platform3 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform4 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform5 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform6 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform7 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform8 = std::make_unique<Model>("../Models/platform.dae", &textures);
+	platform9 = std::make_unique<Model>("../Models/platform.dae", &textures);
 	island2 = std::make_unique<Model>("../Models/islandSmoothed.dae", &textures);
 	island3 = std::make_unique<Model>("../Models/islandSmoothed.dae", &textures);
+	island4 = std::make_unique<Model>("../Models/islandSmoothed.dae", &textures);
 	skyBox = std::make_unique<Model>("../Models/skyBox.dae", &textures);
 	goal = std::make_unique<Model>("../Models/platform.dae", &textures);
 
 
 	//Borders
 
-	player->position = glm::vec3(0, 0.5f, 0);
+	player->position = glm::vec3(0, 1.1f, 0);
 	view = cam->setUp(player->center);
 	projection = glm::perspective(glm::radians(60.0f), width / height, near_plane, far_plane);
 	frustum.setCamInternals(60.0f, width / height, near_plane, far_plane);
@@ -585,7 +599,8 @@ void init(GLFWwindow* window)
 	platform2_0->position = glm::vec3(31.0f, 0.0f, 5.0f);
 	platform2_0->viewMatrix = view;
 
-	goal->position = glm::vec3(38.0f, 3.0f, -5.0f);
+	goal->position = glm::vec3(78.0f, 26.0f, 30.0f);
+	
 	goal->viewMatrix = view;
 
 	/*std::vector<std::vector<int>> sol = calcPath();
@@ -662,11 +677,23 @@ void init(GLFWwindow* window)
 	plant->viewMatrix = view;
 
 
-	island2->position = glm::vec3(15.0f, 1.0f, 0.0f);
+	
+	island2->position = glm::vec3(40.0f, 4.0f, -8.0f);
 	island2->viewMatrix = view;
 
-	island3->position = glm::vec3(30.0f, 3.0f, 0.0f);
+	platform4->position = glm::vec3(44.0f, 7.0f, -2.0f);
+
+	island3->position = glm::vec3(55.0f, 11.0f, -4.0f);
 	island3->viewMatrix = view;
+
+	platform5->position = glm::vec3(60.0f, 13.0f, -2.0f);
+	platform6->position = glm::vec3(63.0f, 17.0f, -4.0f);
+	platform7->position = glm::vec3(65.0f, 22.0f,  0.0f);
+	platform8->position = glm::vec3(60.0f, 22.0f,  8.0f);
+	platform9->position = glm::vec3(65.0f, 22.0f,  16.0f);
+	island4->position = glm::vec3(70.0f, 22.0f, 26.0f);
+	
+	
 	platform3->draw();
 
 	skyBox->position = glm::vec3(0, 0, 0);
@@ -737,6 +764,18 @@ void init(GLFWwindow* window)
 	models.push_back(std::move(platform0_0));
 	models.push_back(std::move(platform2_0));
 	models.push_back(std::move(goal));
+	models.push_back(std::move(island2));
+	models.push_back(std::move(platform4));
+	models.push_back(std::move(platform5));
+	models.push_back(std::move(platform6));
+	models.push_back(std::move(platform7));
+	models.push_back(std::move(platform8));
+	models.push_back(std::move(platform9));
+	models.push_back(std::move(island4));
+
+
+
+	models.push_back(std::move(island3));
 
 	platforms[0][0] = std::move(platform0_0);
 	platforms[0][1] = std::move(platform0_1);
@@ -813,7 +852,7 @@ void print_youWin(){
 		if (wireframeOn) {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
-		text->drawText(message, height / 2.0f - 100, width / 2.0f - 100, 2.0f);
+		text->drawText(message, width/2.0f - 100, height / 2.0f - 50, 2.0f);
 		messageTimer -= time_delta;
 		if (wireframeOn) {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -1002,15 +1041,17 @@ void update(float deltaTime)
 			pathTimer = 0;
 		}
 		
+		
+
 		if (characterController->getPosition().z < -3.2 && characterController->getPosition().z > -6.9 && 
-			characterController->getPosition().x < 12 && characterController->getPosition().x > 7.8){
+			characterController->getPosition().x < 12 && characterController->getPosition().x > 7.8 && characterController->getPosition().y < 1.2){
 			characterController->setPosition(physx::PxExtendedVec3(0, 0, 0));
 			models[0]->position = glm::vec3(0, 0, 0);
 			pathTimer = 0;
 		}
 		
 		if (characterController->getPosition().z < 1.8 && characterController->getPosition().z > -1.9 &&
-			characterController->getPosition().x < 19 && characterController->getPosition().x > 14.6){
+			characterController->getPosition().x < 19 && characterController->getPosition().x > 14.6 && characterController->getPosition().y < 1.2){
 			characterController->setPosition(physx::PxExtendedVec3(0, 0, 0));
 			models[0]->position = glm::vec3(0, 0, 0);
 			pathTimer = 0;
@@ -1018,35 +1059,37 @@ void update(float deltaTime)
 		
 		
 		if (characterController->getPosition().z < -3.2 && characterController->getPosition().z > -6.9 &&
-			characterController->getPosition().x < 19 && characterController->getPosition().x > 14.6){
+			characterController->getPosition().x < 19 && characterController->getPosition().x > 14.6 && characterController->getPosition().y < 1.2){
 			characterController->setPosition(physx::PxExtendedVec3(0, 0, 0));
 			models[0]->position = glm::vec3(0, 0, 0);
 			pathTimer = 0;
 		}
 
 		if (characterController->getPosition().z < 1.8 && characterController->getPosition().z > -1.9 &&
-			characterController->getPosition().x < 33 && characterController->getPosition().x > 28.6){
+			characterController->getPosition().x < 33 && characterController->getPosition().x > 28.6 && characterController->getPosition().y < 1.2){
 			characterController->setPosition(physx::PxExtendedVec3(0, 0, 0));
 			models[0]->position = glm::vec3(0, 0, 0);
 			pathTimer = 0;
 		}
 
 		if (characterController->getPosition().z < 6.8 && characterController->getPosition().z > 3.1 &&
-			characterController->getPosition().x < 33 && characterController->getPosition().x > 28.6){
+			characterController->getPosition().x < 33 && characterController->getPosition().x > 28.6 && characterController->getPosition().y < 1.2){
 			characterController->setPosition(physx::PxExtendedVec3(0, 0, 0));
 			models[0]->position = glm::vec3(0, 0, 0);
 			pathTimer = 0;
 		}
 
-		if (characterController->getPosition().z < -3.2 && characterController->getPosition().z > -6.9 &&
-			characterController->getPosition().x < 40 && characterController->getPosition().x > 35.6 &&
-			characterController->getPosition().y < 4.2 && characterController->getPosition().y > 4.0) {
+		//goal->position = glm::vec3(72.0f, 26.0f, 30.0f);
+		
+		std::cout << characterController->getPosition().x << " " << characterController->getPosition().z << " " << characterController->getPosition().y << std::endl;
+		if (characterController->getPosition().x < 79.90f && characterController->getPosition().x > 70.8 &&
+			characterController->getPosition().z < 31.4 && characterController->getPosition().z > 28.4 &&
+			characterController->getPosition().y < 27.2 && characterController->getPosition().y > 27.0) {
 			std::cout << "You win!" << std::endl;
 			float timer = 0.0;
 			messageTimer = 2.0f;
 			while (timer < 3) {
 				timer += time_delta;
-				std::cout << "timer" << timer << std::endl;
 			}
 
 			characterController->setPosition(physx::PxExtendedVec3(0, 0, 0));
