@@ -5,6 +5,7 @@ in vec2 fragmentUV;
 in vec3 fragPos;
 in vec3 viewPos;
 in vec4 fragPosLightSpace; 
+in float transparency; 
 
 layout (location = 0) out vec4 fragColor;
 
@@ -66,11 +67,11 @@ void main()
 	
 	//Specular Part 
 	
-	vec3 viewDir = normalize(viewPos);
-	vec3 reflectDir = normalize(lightDir + viewDir);
+	vec3 viewDir = normalize(viewPos - fragPos);
+	vec3 halfwayDir = normalize(lightDir + viewDir);
+	vec3 reflectDir = reflect(-lightDir, norm);
 	float spec = pow(max(dot(viewDir, reflectDir),0.0f), mat.shininess);
-	vec3 specular = light.specular * spec * mat.specular; 
-
+	vec3 specular = light.specular * spec * mat.specular;
 	//Resulting Light
 	float shadow = ShadowCalculation(fragPosLightSpace);
 	vec3 result = ambient + (1.0 - shadow) * (diffuse+specular);
@@ -82,6 +83,10 @@ void main()
 	else{
 	result = result * mat.diffuse;
 	}
-	gl_FragDepth = mix(1.0, gl_FragCoord.z, texture(tex, fragmentUV).w);
+	if (texture(tex,fragmentUV).w < 0.9 && transparency > 0.5){
+	gl_FragDepth = 1.0;
+	} else {
+	gl_FragDepth = gl_FragCoord.z;
+	}
 	fragColor = mix(vec4(result, texture(tex,fragmentUV).w) , singleColor ,singleColor.w);
 }
