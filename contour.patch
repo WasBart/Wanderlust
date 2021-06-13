@@ -1,0 +1,166 @@
+diff --git a/Shader/contour.frag b/Shader/contour.frag
+index 630d399..07e5539 100644
+--- a/Shader/contour.frag
++++ b/Shader/contour.frag
+@@ -5,14 +5,17 @@ layout(location = 0) out vec4 color;
+ in vec2 UV;
+ 
+ layout(binding = 0) uniform sampler2D render_texture;
++layout(binding = 1) uniform sampler2D depth_texture;
+ layout(location = 3) uniform vec2 offset[25];
+ 
+ void main()
+ {
+ 	vec4 tex_data[25];
++	float mindepth = 1.0;
+ 	for (int i = 0; i < 25; i++)
+ 	{
+ 		tex_data[i] = texture(render_texture, UV + offset[i]);
++		mindepth = min(mindepth, texture(depth_texture, UV + offset[i]).r);
+ 	}
+ 
+ 	// Apply laplace
+@@ -29,4 +32,5 @@ void main()
+     } else {
+         color = vec4(0.0);
+     }
++	gl_FragDepth = mindepth - 0.0001;
+ }
+\ No newline at end of file
+diff --git a/Shader/toon2.frag b/Shader/toon2.frag
+index 4045b99..e313e4c 100644
+--- a/Shader/toon2.frag
++++ b/Shader/toon2.frag
+@@ -11,6 +11,7 @@ layout (location = 0) out vec4 fragColor;
+ 
+ layout (binding = 0) uniform sampler2D tex;
+ layout (binding = 2) uniform sampler2DShadow shadowMap;
++layout (depth_greater) out float gl_FragDepth;
+ 
+ uniform vec4 singleColor;
+ 
+@@ -81,6 +82,6 @@ void main()
+ 	else{
+ 	result = result * mat.diffuse;
+ 	}
+-
++	gl_FragDepth = mix(1.0, gl_FragCoord.z, texture(tex, fragmentUV).w);
+ 	fragColor = mix(vec4(result, texture(tex,fragmentUV).w) , singleColor ,singleColor.w);
+ }
+\ No newline at end of file
+diff --git a/Wanderlust/Contour.cpp b/Wanderlust/Contour.cpp
+index 193f4a0..b8d150b 100644
+--- a/Wanderlust/Contour.cpp
++++ b/Wanderlust/Contour.cpp
+@@ -16,15 +16,23 @@ void Contour::initialize(GLuint width, GLuint height)
+ 	glGenFramebuffers(1, &big_fbo);
+ 	glBindFramebuffer(GL_FRAMEBUFFER, big_fbo);
+ 	glGenTextures(1, &big_tex);
++	glActiveTexture(GL_TEXTURE0);
+ 	glBindTexture(GL_TEXTURE_2D, big_tex);
+ 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+ 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+ 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
++	glGenTextures(1, &big_depth_tex);
++	glActiveTexture(GL_TEXTURE1);
++	glBindTexture(GL_TEXTURE_2D, big_depth_tex);
++	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
++	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
++	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+ 	glGenRenderbuffers(1, &big_depth);
+ 	glBindRenderbuffer(GL_RENDERBUFFER, big_depth);
+ 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+ 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, big_depth);
+ 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, big_tex, 0);
++	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, big_depth_tex, 0);
+ 	glDrawBuffers(1, draw_buffers);
+ 
+ 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+@@ -68,6 +76,8 @@ void Contour::activate()
+ 	//GLenum draw_buffers[1] = { GL_COLOR_ATTACHMENT0 };
+ 	//glDrawBuffers(1, draw_buffers);
+ 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
++	glActiveTexture(GL_TEXTURE1);
++	glBindTexture(GL_TEXTURE_2D, big_depth_tex);
+ 
+ }
+ 
+@@ -95,6 +105,8 @@ void Contour::draw()
+ 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+ 	glActiveTexture(GL_TEXTURE0);
+ 	glBindTexture(GL_TEXTURE_2D, big_tex);
++	glActiveTexture(GL_TEXTURE1);
++	glBindTexture(GL_TEXTURE_2D, big_depth_tex);
+ 	laplaceShader->useShader();
+ 	glUniform2fv(3, 25, offset);
+ 	glBindVertexArray(laplace_vao);
+diff --git a/Wanderlust/Contour.h b/Wanderlust/Contour.h
+index 5dcaf82..1bb0b00 100644
+--- a/Wanderlust/Contour.h
++++ b/Wanderlust/Contour.h
+@@ -9,6 +9,7 @@ public:
+ 
+ 	GLuint big_tex;
+ 	GLuint big_fbo;
++	GLuint big_depth_tex;
+ 	GLuint laplace_vao;
+ 	GLuint windowWidth;
+ 	GLuint windowHeight;
+diff --git a/Wanderlust/main.cpp b/Wanderlust/main.cpp
+index 2e0f7c3..fae7973 100644
+--- a/Wanderlust/main.cpp
++++ b/Wanderlust/main.cpp
+@@ -208,7 +208,7 @@ int main(int argc, char** argv){
+ 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+ #endif
+ 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
++	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+ 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+ 	GLFWwindow* window;
+ 
+@@ -768,44 +768,6 @@ void draw(){
+ 	glm::vec4 color(clearColor);
+ 	contour->activate();
+ 	shader->useShader();
+-	glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
+-	for (int i = 1; i < models.size(); i++){
+-		if (frustumOn){
+-			if (i == 3 && transparencyOn){
+-				glEnable(GL_BLEND);
+-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+-			}
+-			if (i == 3) {
+-				glDisable(GL_CULL_FACE);
+-			}
+-			if (frustum.boxInFrustum(boundaries[i]->getWorldBounds())){
+-				models[i]->draw();
+-			}
+-			if (i == 3 && transparencyOn){
+-				glDisable(GL_BLEND);
+-			}
+-			if (i == 3) {
+-				glEnable(GL_CULL_FACE);
+-			}
+-		}
+-		else{
+-			if (i == 3 && transparencyOn){
+-				glEnable(GL_BLEND);
+-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+-			}
+-			if (i == 3) {
+-				glDisable(GL_CULL_FACE);
+-			}
+-			models[i]->draw();
+-			if (i == 3 && transparencyOn){
+-				glDisable(GL_BLEND);
+-			}
+-			if (i == 3) {
+-				glEnable(GL_CULL_FACE);
+-			}
+-		}
+-	
+-	}
+ 	color = glm::vec4(1.0, 0.0, 0.0, 1.0);
+ 	glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
+ 	models[0]->draw();
