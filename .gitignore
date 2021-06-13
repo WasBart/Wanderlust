@@ -190,3 +190,9 @@ Debug
 GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
+
+External/DLLs
+External/Include
+External/Lib
+
+.vs

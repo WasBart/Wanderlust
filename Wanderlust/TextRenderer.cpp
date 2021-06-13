@@ -14,7 +14,7 @@ TextRenderer::TextRenderer(float width, float height)
 		std::cout << "FreeType initialization error\n";
 		exit(EXIT_FAILURE);
 	}
-	if (FT_New_Face(ft, "..\\fonts\\yanone.ttf", 0, &face))
+	if (FT_New_Face(ft, "../fonts\\yanone.ttf", 0, &face))
 	{
 		std::cout << "Failed to load font\n";
 		exit(EXIT_FAILURE);

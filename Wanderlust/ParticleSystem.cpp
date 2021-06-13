@@ -151,7 +151,7 @@ void ParticleSystem::initialize(glm::vec3 &playerPos)
 		oldTime = glfwGetTime();
 	}
 	else{
-		std::cerr << "Failed to open shader file " << "../Shader/particle.comp" << std::endl;
+		std::cerr << "Failed to open shader file " << "Shader/particle.comp" << std::endl;
 		system("Pause");
 		exit(EXIT_FAILURE);
 	}

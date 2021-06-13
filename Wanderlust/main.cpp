@@ -81,12 +81,14 @@ void onShapeHit(const physx::PxControllerShapeHit& hit);
 void print_youWin();
 std::vector<std::vector<int>> calcPath();
 
+boolean gourardOn = false;
 float timer = 5.0f;
 
 GLuint textureID;
 std::unique_ptr<Shader> shader;
 std::unique_ptr<Shader> shadowMapShader;
 std::unique_ptr<Shader> skyBoxShader;
+std::unique_ptr<Shader> gouradShader;
 
 std::unique_ptr<Camera> cam;
 
@@ -143,7 +145,7 @@ glm::mat4 lightProjection;
 
 const glm::vec3 camInitial = glm::vec3(0.0f, -0.3f, -1.0f);
 glm::vec3 camDirection = camInitial;
-const glm::vec4 clearColor = glm::vec4(0.35f, 0.36f, 0.43f, 1.0f);
+const glm::vec4 clearColor = glm::vec4(0.10f, 0.10f, 0.10f, 1.0f);
 float width;
 float height;
 float rad = 0.0f;
@@ -156,6 +158,8 @@ float pathTimer = 0;
 std::string message = "";
 std::string textMessage = "";
 float messageTimer = 0.0;
+float winTimer = 0.0f;
+float transp = 1.0f;
 
 GLfloat near_plane = 0.1f, far_plane = 100.0f;
 physx::PxReal myTimeStep = 1.0f / 60.0f;
@@ -508,6 +512,8 @@ void init(GLFWwindow* window)
 		"../Shader/shadowMapShader.fragment");
 	skyBoxShader = std::make_unique<Shader>("../Shader/skyBox.vert",
 		"../Shader/skyBox.frag");
+	gouradShader = std::make_unique<Shader>("../Shader/basic.vert",
+		"../Shader/toon2.frag");
 
 	//cube = std::make_unique<Cube>(glm::mat4(1.0f), shader.get());
 	cam = std::make_unique<Camera>(0.0f, 0.0f, 0.0f);
@@ -722,7 +728,7 @@ void init(GLFWwindow* window)
 	glUniform3f(matAmbientPos, 0.4f, 0.4f, 0.4f);
 	glUniform3f(matDiffusePos, 1.0f, 1.0f, 1.0f);
 	glUniform3f(matSpecularPos,1.0f, 1.0f, 1.0f);
-	glUniform1f(matShinePos, 40.0f);
+	glUniform1f(matShinePos, 10.0f);
 
 
 	//Setting LightProperties
@@ -737,6 +743,9 @@ void init(GLFWwindow* window)
 	glUniform3f(lightAmbientPos, 1.0f, 1.0f, 1.0f);
 	glUniform3f(lightDiffusePos, 1.0f, 1.0f, 1.0f);
 	glUniform3f(lightSpecularPos, 0.0f, 0.0f, 0.0f);
+
+	auto transparency = glGetUniformLocation(shader->programHandle, "transparency");
+	glUniform1f(transparency,1.0);
 
 	skyBoxShader->useShader();
 	modelView = glGetUniformLocation(skyBoxShader->programHandle, "view");
@@ -826,7 +835,7 @@ void print_fps()
 		}
 		float frametime = time_delta * 1000;
 		float fps = 1.0 / time_delta;
-		std::string frames = "Frametime: " + std::to_string(frametime) + " ms =~ " + std::to_string(fps) + " fps";
+		std::string frames = "Frametime: " + std::to_string(frametime) + " ms =~ " + std::to_string(fps) + " fps ";
 		text->drawText(frames, 10, height - 25.0f, 0.4f);
 		if (wireframeOn) {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -849,13 +858,13 @@ void print_message()
 }
 
 void print_youWin(){
-	if (messageTimer > 0){
+	if (winTimer > 0){
 		message = "YOU WIN";
 		if (wireframeOn) {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
 		text->drawText(message, width/2.0f - 100, height / 2.0f - 50, 2.0f);
-		messageTimer -= time_delta;
+		winTimer -= time_delta;
 		if (wireframeOn) {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}
@@ -890,6 +899,7 @@ void draw(){
 	
 	shader->useShader();
 for (int i = 0; i < models.size(); i++){
+	
 		if (frustumOn && i != 0 && i != 4 ){
 			if (frustum.boxInFrustum(boundaries[i]->getWorldBounds())){
 			
@@ -906,10 +916,12 @@ for (int i = 0; i < models.size(); i++){
 						color = glm::vec4(0.0, 0.0, 1.0, 1.0);
 						glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
 						models[i]->draw();
+						
 					}	
 					else
 					{
 						models[i]->draw();
+						
 					}
 				}
 				else if (i == 16) {
@@ -918,15 +930,18 @@ for (int i = 0; i < models.size(); i++){
 						color = glm::vec4(1.0, 1.0, 0.0, 1.0);
 						glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
 						models[i]->draw();
+				
 					}
 					else
 					{
 						models[i]->draw();
+					
 					}
 				}
 				else
 				{
 					models[i]->draw();
+			
 				}
 				color = glm::vec4(0.0);
 				glUniform4fv(singleColorLoc, 1, glm::value_ptr(color));
@@ -935,7 +950,10 @@ for (int i = 0; i < models.size(); i++){
 				}
 				if (i == 3) {
 					glEnable(GL_CULL_FACE);
-				}
+				} 
+			}
+			else{
+				
 			}
 		}
 		else{
@@ -960,6 +978,7 @@ for (int i = 0; i < models.size(); i++){
 		}
 		
 	}
+  
 	glDepthFunc(GL_LEQUAL);
 	skyBox->viewMatrix = glm::mat4(glm::mat3(view));
 	skyBoxShader->useShader();
@@ -1087,9 +1106,9 @@ void update(float deltaTime)
 		if (characterController->getPosition().x < 79.90f && characterController->getPosition().x > 70.8 &&
 			characterController->getPosition().z < 31.4 && characterController->getPosition().z > 28.4 &&
 			characterController->getPosition().y < 27.2 && characterController->getPosition().y > 27.0) {
-			std::cout << "You win!" << std::endl;
 			
-			messageTimer = 2.0f;
+			
+			winTimer = 2.0f;
 
 			float winTimer = 0;
 			Sleep(100);
@@ -1267,10 +1286,33 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		if (transparencyOn) {
 			textMessage = "Transparency: On";
 			messageTimer = 2.0f;
+			shader->useShader();
+			glUniform1f(7, 1.0);
 		}
 		else {
 			textMessage = "Transparency: Off";
 			messageTimer = 2.0f;
+			shader->useShader();
+			glUniform1f(7, 0.0);
+		}
+	}
+	if (key == GLFW_KEY_F10 && action == GLFW_PRESS) {
+
+		if (gourardOn){
+			textMessage = "Specularity: Off";
+			messageTimer = 2.0f;
+			shader->useShader();
+			int lightSpecularPos = glGetUniformLocation(shader->programHandle, "light.specular");
+			glUniform3f(lightSpecularPos, 0.0f, 0.0f, 0.0f);
+			gourardOn = false;
+		}
+		else{
+			textMessage = "Specularity: On";
+			messageTimer = 2.0f;
+			shader->useShader();
+			int lightSpecularPos = glGetUniformLocation(shader->programHandle, "light.specular");
+			glUniform3f(lightSpecularPos, 1.0f, 1.0f, 1.0f);
+			gourardOn = true;
 		}
 	}
 }
